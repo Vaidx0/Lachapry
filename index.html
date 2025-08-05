@@ -186,6 +186,12 @@
             margin: 0 auto;
         }
 
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 3rem;
+        }
+
         .logo {
             font-size: 2rem;
             font-weight: bold;
@@ -211,9 +217,11 @@
             transition: all 0.3s ease;
             position: relative;
             padding: 0.5rem 0;
+            font-weight: 500;
         }
 
-        .nav-links a:hover {
+        .nav-links a:hover,
+        .nav-links a.active {
             color: #ffffff;
             transform: translateY(-2px);
             text-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
@@ -231,7 +239,8 @@
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
         }
 
-        .nav-links a:hover::after {
+        .nav-links a:hover::after,
+        .nav-links a.active::after {
             width: 100%;
         }
 
@@ -352,6 +361,10 @@
             padding: 80px 2rem;
             max-width: 1400px;
             margin: 0 auto;
+        }
+
+        .section {
+            margin-bottom: 4rem;
         }
 
         .section-title {
@@ -573,8 +586,12 @@
                 font-size: 2.5rem;
             }
             
+            .nav-left {
+                gap: 1rem;
+            }
+            
             .nav-links {
-                display: none;
+                gap: 1rem;
             }
             
             .search-bar input {
@@ -680,12 +697,14 @@
     <!-- Header -->
     <header class="header">
         <nav class="nav">
-            <div class="logo">Lachapry</div>
-            <ul class="nav-links">
-                <li><a href="#accueil">Accueil</a></li>
-                <li><a href="#films">Films</a></li>
-                <li><a href="#series">Séries</a></li>
-            </ul>
+            <div class="nav-left">
+                <div class="logo">Lachapry</div>
+                <ul class="nav-links">
+                    <li><a href="#accueil" class="nav-tab active" data-tab="accueil">Accueil</a></li>
+                    <li><a href="#films" class="nav-tab" data-tab="films">Films</a></li>
+                    <li><a href="#series" class="nav-tab" data-tab="series">Séries</a></li>
+                </ul>
+            </div>
             <div class="search-bar">
                 <input type="text" placeholder="Rechercher..." id="searchInput">
                 <span>🔍</span>
@@ -694,7 +713,7 @@
     </header>
 
     <!-- Hero Section -->
-    <section class="hero">
+    <section class="hero" id="accueil">
         <div class="hero-content">
             <h1>Lachapry</h1>
             <p>Découvrez des milliers de films et séries en streaming illimité</p>
@@ -707,15 +726,15 @@
         <!-- Categories -->
         <div class="categories">
             <button class="category-btn active" data-genre="all">Tout</button>
-            <button class="category-btn" data-genre="28">Action</button>
-            <button class="category-btn" data-genre="35">Comédie</button>
-            <button class="category-btn" data-genre="18">Drame</button>
-            <button class="category-btn" data-genre="878">Sci-Fi</button>
-            <button class="category-btn" data-genre="27">Horreur</button>
+            <button class="category-btn" data-genre="action">Action</button>
+            <button class="category-btn" data-genre="comedy">Comédie</button>
+            <button class="category-btn" data-genre="drama">Drame</button>
+            <button class="category-btn" data-genre="scifi">Sci-Fi</button>
+            <button class="category-btn" data-genre="horror">Horreur</button>
         </div>
 
-        <!-- Films Populaires -->
-        <section id="films">
+        <!-- Films Section -->
+        <section class="section" id="films">
             <h2 class="section-title">Films Populaires</h2>
             <div class="movies-grid" id="moviesGrid"></div>
             <div class="pagination" id="pagination">
@@ -725,8 +744,8 @@
             </div>
         </section>
 
-        <!-- Séries Tendance -->
-        <section id="series">
+        <!-- Séries Section -->
+        <section class="section" id="series">
             <h2 class="section-title">Séries Tendance</h2>
             <div class="movies-grid" id="seriesGrid"></div>
             <div class="pagination" id="seriesPagination">
@@ -737,21 +756,290 @@
         </section>
     </main>
 
-    <!-- Footer simplifié -->
+    <!-- Footer -->
     <footer class="footer">
         <p>&copy; 2025 Lachapry. Tous droits réservés.</p>
     </footer>
 
     <script>
-        // Configuration de l'API TMDB
-        const API_KEY = '8d4e6a4b4b7e3e3c9e5a9a0a3a3a3a3a'; // Clé API TMDB (à remplacer par une vraie clé)
-        const BASE_URL = 'https://api.themoviedb.org/3';
-        const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w1280';
-        
-        // Variables pour la pagination
+        // Base de données de films et séries populaires
+        const moviesDatabase = {
+            action: [
+                {
+                    id: 1,
+                    title: "Top Gun: Maverick",
+                    genre: "Action • Drame",
+                    year: "2022",
+                    rating: 8.3,
+                    poster: "https://image.tmdb.org/t/p/w500/62HCnUTziyWcpDaBO2i1DX17ljH.jpg"
+                },
+                {
+                    id: 2,
+                    title: "Avatar: La Voie de l'eau",
+                    genre: "Action • Aventure",
+                    year: "2022",
+                    rating: 7.6,
+                    poster: "https://image.tmdb.org/t/p/w500/t6HIqrRAclMCA60NsSmeqe9RmNV.jpg"
+                },
+                {
+                    id: 3,
+                    title: "Spider-Man: No Way Home",
+                    genre: "Action • Aventure",
+                    year: "2021",
+                    rating: 8.2,
+                    poster: "https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg"
+                },
+                {
+                    id: 4,
+                    title: "Fast & Furious 9",
+                    genre: "Action • Crime",
+                    year: "2021",
+                    rating: 5.2,
+                    poster: "https://image.tmdb.org/t/p/w500/bOFaAXmWWXC3Rbv4u4uM9ZSzRXP.jpg"
+                },
+                {
+                    id: 5,
+                    title: "John Wick: Chapter 4",
+                    genre: "Action • Crime",
+                    year: "2023",
+                    rating: 7.7,
+                    poster: "https://image.tmdb.org/t/p/w500/vZloFAK7NmvMGKE7VkF5UHaz0I.jpg"
+                },
+                {
+                    id: 6,
+                    title: "Mission: Impossible 7",
+                    genre: "Action • Thriller",
+                    year: "2023",
+                    rating: 7.8,
+                    poster: "https://image.tmdb.org/t/p/w500/NNxYkU70HPurnNCSiCjYAmacwm.jpg"
+                }
+            ],
+            comedy: [
+                {
+                    id: 7,
+                    title: "Free Guy",
+                    genre: "Comédie • Action",
+                    year: "2021",
+                    rating: 7.1,
+                    poster: "https://image.tmdb.org/t/p/w500/xmbU4JTUm8rsdtn7Y3Fcm30GpeT.jpg"
+                },
+                {
+                    id: 8,
+                    title: "The Grand Budapest Hotel",
+                    genre: "Comédie • Drame",
+                    year: "2014",
+                    rating: 8.1,
+                    poster: "https://image.tmdb.org/t/p/w500/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg"
+                },
+                {
+                    id: 9,
+                    title: "Knives Out",
+                    genre: "Comédie • Crime",
+                    year: "2019",
+                    rating: 7.9,
+                    poster: "https://image.tmdb.org/t/p/w500/pThyQovXQrw2m0s9x82twj48Jq4.jpg"
+                },
+                {
+                    id: 10,
+                    title: "La La Land",
+                    genre: "Comédie • Drame",
+                    year: "2016",
+                    rating: 8.0,
+                    poster: "https://image.tmdb.org/t/p/w500/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg"
+                }
+            ],
+            drama: [
+                {
+                    id: 11,
+                    title: "The Batman",
+                    genre: "Crime • Drame",
+                    year: "2022",
+                    rating: 7.8,
+                    poster: "https://image.tmdb.org/t/p/w500/b0PlSFdDwbyK0cf5RxwDpaOJQvQ.jpg"
+                },
+                {
+                    id: 12,
+                    title: "Dune",
+                    genre: "Drame • Sci-Fi",
+                    year: "2021",
+                    rating: 8.0,
+                    poster: "https://image.tmdb.org/t/p/w500/d5NXSklXo0qyIYkgV94XAgMIckC.jpg"
+                },
+                {
+                    id: 13,
+                    title: "CODA",
+                    genre: "Drame • Musique",
+                    year: "2021",
+                    rating: 8.0,
+                    poster: "https://image.tmdb.org/t/p/w500/BzVjmm8l23rPsijLiNLUzuQtyd.jpg"
+                },
+                {
+                    id: 14,
+                    title: "The Power of the Dog",
+                    genre: "Drame • Western",
+                    year: "2021",
+                    rating: 6.8,
+                    poster: "https://image.tmdb.org/t/p/w500/kEVQZIX7d8UkpB3vNdniy2FpNaU.jpg"
+                }
+            ],
+            scifi: [
+                {
+                    id: 15,
+                    title: "Blade Runner 2049",
+                    genre: "Sci-Fi • Thriller",
+                    year: "2017",
+                    rating: 8.0,
+                    poster: "https://image.tmdb.org/t/p/w500/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg"
+                },
+                {
+                    id: 16,
+                    title: "Interstellar",
+                    genre: "Sci-Fi • Drame",
+                    year: "2014",
+                    rating: 8.6,
+                    poster: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg"
+                },
+                {
+                    id: 17,
+                    title: "Matrix Resurrections",
+                    genre: "Sci-Fi • Action",
+                    year: "2021",
+                    rating: 5.7,
+                    poster: "https://image.tmdb.org/t/p/w500/8c4a8kE7PizaGQQnditMmI1xbRp.jpg"
+                },
+                {
+                    id: 18,
+                    title: "Ex Machina",
+                    genre: "Sci-Fi • Drame",
+                    year: "2014",
+                    rating: 7.7,
+                    poster: "https://image.tmdb.org/t/p/w500/btTdmkgIvOi0FFip1sPuZI2oQG6.jpg"
+                }
+            ],
+            horror: [
+                {
+                    id: 19,
+                    title: "A Quiet Place",
+                    genre: "Horreur • Thriller",
+                    year: "2018",
+                    rating: 7.5,
+                    poster: "https://image.tmdb.org/t/p/w500/nAU74GmpUk7t5iklEp3bufwDq4n.jpg"
+                },
+                {
+                    id: 20,
+                    title: "Get Out",
+                    genre: "Horreur • Thriller",
+                    year: "2017",
+                    rating: 7.7,
+                    poster: "https://image.tmdb.org/t/p/w500/tFXHpm3lIU7DqT0L5oOqVk6I89n.jpg"
+                },
+                {
+                    id: 21,
+                    title: "Hereditary",
+                    genre: "Horreur • Drame",
+                    year: "2018",
+                    rating: 7.3,
+                    poster: "https://image.tmdb.org/t/p/w500/p81a0FPVPmeT6OhzJU8NzxkOLDV.jpg"
+                },
+                {
+                    id: 22,
+                    title: "The Conjuring",
+                    genre: "Horreur • Thriller",
+                    year: "2013",
+                    rating: 7.5,
+                    poster: "https://image.tmdb.org/t/p/w500/wVYREutTvI2tmxr6ujrHT704wGF.jpg"
+                }
+            ]
+        };
+
+        const seriesDatabase = [
+            {
+                id: 23,
+                title: "Stranger Things",
+                genre: "Sci-Fi • Horreur",
+                year: "2016-2022",
+                rating: 8.7,
+                poster: "https://image.tmdb.org/t/p/w500/x2LSRK2Cm7MZhjluni1msVJ3wDF.jpg"
+            },
+            {
+                id: 24,
+                title: "The Witcher",
+                genre: "Fantasy • Action",
+                year: "2019-",
+                rating: 8.2,
+                poster: "https://image.tmdb.org/t/p/w500/7vjaCdMw15FEbXyLQTVa04URsPm.jpg"
+            },
+            {
+                id: 25,
+                title: "House of the Dragon",
+                genre: "Fantasy • Drame",
+                year: "2022-",
+                rating: 8.5,
+                poster: "https://image.tmdb.org/t/p/w500/7QMsOTMUswlwxJP0rTTZfmz2tX2.jpg"
+            },
+            {
+                id: 26,
+                title: "The Boys",
+                genre: "Action • Comédie",
+                year: "2019-",
+                rating: 8.7,
+                poster: "https://image.tmdb.org/t/p/w500/mY7SeH4HFFxW1hiI6cWuwCRKptN.jpg"
+            },
+            {
+                id: 27,
+                title: "Wednesday",
+                genre: "Comédie • Horreur",
+                year: "2022-",
+                rating: 8.1,
+                poster: "https://image.tmdb.org/t/p/w500/9PFonBhy4cQy7Jz20NpMygczOkv.jpg"
+            },
+            {
+                id: 28,
+                title: "The Crown",
+                genre: "Drame • Histoire",
+                year: "2016-2023",
+                rating: 8.6,
+                poster: "https://image.tmdb.org/t/p/w500/1M876KQUEYsZFHEGjmbmYw1WkVq.jpg"
+            },
+            {
+                id: 29,
+                title: "Breaking Bad",
+                genre: "Crime • Drame",
+                year: "2008-2013",
+                rating: 9.5,
+                poster: "https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg"
+            },
+            {
+                id: 30,
+                title: "Game of Thrones",
+                genre: "Fantasy • Drame",
+                year: "2011-2019",
+                rating: 9.2,
+                poster: "https://image.tmdb.org/t/p/w500/u3bZgnGQ9T01sWNhyveQz0wH0Hl.jpg"
+            },
+            {
+                id: 31,
+                title: "The Mandalorian",
+                genre: "Sci-Fi • Action",
+                year: "2019-",
+                rating: 8.8,
+                poster: "https://image.tmdb.org/t/p/w500/sWgBv7LV2PRoQgkxwlibdGXKz1S.jpg"
+            },
+            {
+                id: 32,
+                title: "Euphoria",
+                genre: "Drame",
+                year: "2019-",
+                rating: 8.4,
+                poster: "https://image.tmdb.org/t/p/w500/jtnfNzqZwN4E32FGGxx1YZaBWWf.jpg"
+            }
+        ];
+
+        // Variables pour la pagination et l'état
         let currentPage = 1;
         let currentSeriesPage = 1;
         let currentGenre = 'all';
+        let currentTab = 'accueil';
         
         // Captcha Script
         document.addEventListener('DOMContentLoaded', function() {
@@ -808,13 +1096,10 @@
                         captchaOverlay.classList.add('hidden');
                         document.body.style.overflow = 'auto';
                         
-                        // Charger les films une fois le captcha validé
-                        fetchPopularMovies();
-                        fetchPopularTVShows();
+                        // Charger les contenus
+                        loadMovies();
+                        loadSeries();
                     }, 500);
-                    
-                    // Stocker la validation
-                    localStorage.setItem('captchaVerified', 'true');
                 } else {
                     // Captcha incorrect
                     captchaError.style.display = 'block';
@@ -837,14 +1122,13 @@
                 }
             });
             
-            // Vérifier si déjà validé
-            if (localStorage.getItem('captchaVerified') === 'true') {
+            // Vérifier si déjà validé (pour les tests)
+            const isVerified = false; // Changez en true pour bypasser le captcha
+            if (isVerified) {
                 captchaOverlay.classList.add('hidden');
                 document.body.style.overflow = 'auto';
-                
-                // Charger les films si déjà validé
-                fetchPopularMovies();
-                fetchPopularTVShows();
+                loadMovies();
+                loadSeries();
             } else {
                 document.body.style.overflow = 'hidden';
             }
@@ -870,36 +1154,33 @@
             });
         });
 
-        // Fonction pour récupérer les films populaires
-        async function fetchPopularMovies() {
-            try {
-                let url = `${BASE_URL}/movie/popular?api_key=${API_KEY}&language=fr-FR&page=${currentPage}`;
-                
-                if (currentGenre !== 'all') {
-                    url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&language=fr-FR&page=${currentPage}&with_genres=${currentGenre}`;
-                }
-                
-                const response = await fetch(url);
-                const data = await response.json();
-                
-                displayMovies(data.results, 'moviesGrid');
-                updatePaginationInfo(data.total_pages, 'pageInfo');
-            } catch (error) {
-                console.error('Error fetching popular movies:', error);
+        // Fonction pour charger les films
+        function loadMovies() {
+            let moviesToShow = [];
+            
+            if (currentGenre === 'all') {
+                moviesToShow = Object.values(moviesDatabase).flat();
+            } else {
+                moviesToShow = moviesDatabase[currentGenre] || [];
             }
+            
+            // Pagination
+            const startIndex = (currentPage - 1) * 6;
+            const endIndex = startIndex + 6;
+            const paginatedMovies = moviesToShow.slice(startIndex, endIndex);
+            
+            displayMovies(paginatedMovies, 'moviesGrid');
+            updatePaginationInfo(Math.ceil(moviesToShow.length / 6), 'pageInfo');
         }
         
-        // Fonction pour récupérer les séries populaires
-        async function fetchPopularTVShows() {
-            try {
-                const response = await fetch(`${BASE_URL}/tv/popular?api_key=${API_KEY}&language=fr-FR&page=${currentSeriesPage}`);
-                const data = await response.json();
-                
-                displayMovies(data.results, 'seriesGrid', true);
-                updatePaginationInfo(data.total_pages, 'seriesPageInfo', true);
-            } catch (error) {
-                console.error('Error fetching popular TV shows:', error);
-            }
+        // Fonction pour charger les séries
+        function loadSeries() {
+            const startIndex = (currentSeriesPage - 1) * 6;
+            const endIndex = startIndex + 6;
+            const paginatedSeries = seriesDatabase.slice(startIndex, endIndex);
+            
+            displayMovies(paginatedSeries, 'seriesGrid', true);
+            updatePaginationInfo(Math.ceil(seriesDatabase.length / 6), 'seriesPageInfo', true);
         }
         
         // Fonction pour afficher les films/séries
@@ -907,31 +1188,21 @@
             const container = document.getElementById(containerId);
             container.innerHTML = '';
             
-            movies.forEach(movie => {
-                const posterPath = movie.poster_path ? 
-                    `${IMAGE_BASE_URL}${movie.poster_path}` : 
-                    'https://via.placeholder.com/300x450?text=Affiche+non+disponible';
-                
-                const title = isTV ? movie.name : movie.title;
-                const date = isTV ? movie.first_air_date : movie.release_date;
-                const year = date ? date.split('-')[0] : 'N/A';
-                const rating = movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A';
-                const stars = getStarRating(movie.vote_average);
-                
-                const genres = movie.genre_ids ? 
-                    getGenreNames(movie.genre_ids, isTV) : 
-                    (movie.genres ? movie.genres.map(g => g.name).join(' • ') : '');
+            movies.forEach((movie, index) => {
+                const posterPath = movie.poster || 'https://via.placeholder.com/300x450?text=Affiche+non+disponible';
+                const rating = movie.rating ? movie.rating.toFixed(1) : 'N/A';
+                const stars = getStarRating(movie.rating);
                 
                 const movieCard = document.createElement('div');
                 movieCard.className = 'movie-card';
-                movieCard.setAttribute('data-video', `https://www.youtube.com/embed/${movie.id}`);
+                movieCard.style.animationDelay = `${index * 0.1}s`;
                 movieCard.innerHTML = `
                     <div class="movie-poster" style="background-image: url('${posterPath}')">
-                        <button class="play-button">▶</button>
+                        <button class="play-button" data-id="${movie.id}">▶</button>
                     </div>
                     <div class="movie-info">
-                        <h3 class="movie-title">${title}</h3>
-                        <p class="movie-genre">${genres || 'N/A'} • ${year}</p>
+                        <h3 class="movie-title">${movie.title}</h3>
+                        <p class="movie-genre">${movie.genre} • ${movie.year}</p>
                         <div class="movie-rating">
                             <span class="stars">${stars}</span>
                             <span>${rating}/10</span>
@@ -946,23 +1217,6 @@
             attachPlayButtonEvents();
         }
         
-        // Fonction pour obtenir les noms des genres
-        async function getGenreNames(genreIds, isTV = false) {
-            try {
-                const type = isTV ? 'tv' : 'movie';
-                const response = await fetch(`${BASE_URL}/genre/${type}/list?api_key=${API_KEY}&language=fr-FR`);
-                const data = await response.json();
-                
-                return genreIds.map(id => {
-                    const genre = data.genres.find(g => g.id === id);
-                    return genre ? genre.name : '';
-                }).filter(name => name).join(' • ');
-            } catch (error) {
-                console.error('Error fetching genres:', error);
-                return '';
-            }
-        }
-        
         // Fonction pour obtenir le rating en étoiles
         function getStarRating(voteAverage) {
             if (!voteAverage) return 'N/A';
@@ -975,33 +1229,67 @@
         function updatePaginationInfo(totalPages, elementId, isTV = false) {
             const element = document.getElementById(elementId);
             const current = isTV ? currentSeriesPage : currentPage;
-            element.textContent = `Page ${current} sur ${totalPages > 500 ? 500 : totalPages}`;
+            element.textContent = `Page ${current} sur ${totalPages}`;
         }
+        
+        // Navigation par onglets
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Mise à jour des onglets actifs
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                const tabName = this.getAttribute('data-tab');
+                currentTab = tabName;
+                
+                // Affichage/masquage des sections
+                const sections = ['accueil', 'films', 'series'];
+                sections.forEach(section => {
+                    const element = document.getElementById(section);
+                    if (section === tabName) {
+                        element.style.display = 'block';
+                        if (section !== 'accueil') {
+                            element.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    } else if (section !== 'accueil') {
+                        element.style.display = tabName === 'accueil' ? 'block' : 'none';
+                    }
+                });
+                
+                // Animation sur l'onglet
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = 'translateY(-2px) scale(1)';
+                }, 100);
+            });
+        });
         
         // Événements de pagination pour les films
         document.getElementById('prevPage').addEventListener('click', () => {
             if (currentPage > 1) {
                 currentPage--;
-                fetchPopularMovies();
+                loadMovies();
             }
         });
         
         document.getElementById('nextPage').addEventListener('click', () => {
             currentPage++;
-            fetchPopularMovies();
+            loadMovies();
         });
         
         // Événements de pagination pour les séries
         document.getElementById('prevSeriesPage').addEventListener('click', () => {
             if (currentSeriesPage > 1) {
                 currentSeriesPage--;
-                fetchPopularTVShows();
+                loadSeries();
             }
         });
         
         document.getElementById('nextSeriesPage').addEventListener('click', () => {
             currentSeriesPage++;
-            fetchPopularTVShows();
+            loadSeries();
         });
         
         // Filtrage par catégorie
@@ -1012,7 +1300,7 @@
                 
                 currentGenre = this.getAttribute('data-genre');
                 currentPage = 1;
-                fetchPopularMovies();
+                loadMovies();
                 
                 // Animation
                 this.style.transform = 'scale(0.95)';
@@ -1025,12 +1313,13 @@
         // Recherche
         document.getElementById('searchInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                const query = this.value.trim();
+                const query = this.value.trim().toLowerCase();
                 if (query) {
-                    searchMovies(query);
+                    searchContent(query);
                 } else {
                     currentPage = 1;
-                    fetchPopularMovies();
+                    loadMovies();
+                    loadSeries();
                 }
                 
                 // Animation
@@ -1043,22 +1332,20 @@
         });
         
         // Fonction de recherche
-        async function searchMovies(query) {
-            try {
-                const response = await fetch(`${BASE_URL}/search/multi?api_key=${API_KEY}&language=fr-FR&query=${query}&page=${currentPage}`);
-                const data = await response.json();
-                
-                // Filtrer les résultats pour n'avoir que films et séries
-                const results = data.results.filter(item => item.media_type === 'movie' || item.media_type === 'tv');
-                
-                displayMovies(results, 'moviesGrid');
-                updatePaginationInfo(data.total_pages, 'pageInfo');
-                
-                // Masquer la section séries si on est en mode recherche
-                document.getElementById('series').style.display = 'none';
-            } catch (error) {
-                console.error('Error searching movies:', error);
-            }
+        function searchContent(query) {
+            const allMovies = Object.values(moviesDatabase).flat();
+            const allContent = [...allMovies, ...seriesDatabase];
+            
+            const results = allContent.filter(item => 
+                item.title.toLowerCase().includes(query) ||
+                item.genre.toLowerCase().includes(query)
+            );
+            
+            displayMovies(results, 'moviesGrid');
+            document.getElementById('pageInfo').textContent = `${results.length} résultat(s) trouvé(s)`;
+            
+            // Masquer la section séries si on est en mode recherche
+            document.getElementById('series').style.display = 'none';
         }
         
         // Attacher les événements aux boutons play
@@ -1073,12 +1360,8 @@
                         this.style.transform = 'translate(-50%, -50%) scale(1.1)';
                     }, 100);
                     
-                    // Récupérer l'ID du film/série
-                    const card = this.closest('.movie-card');
-                    const mediaId = card.getAttribute('data-video').split('/embed/')[1];
-                    
-                    // Charger la vidéo (démonstration seulement)
-                    alert(`Fonctionnalité de démonstration\nID du média: ${mediaId}\nEn production, cela chargerait la bande-annonce`);
+                    const mediaId = this.getAttribute('data-id');
+                    alert(`Lecture de ${mediaId}\nEn production, cela démarrerait la lecture du contenu`);
                 });
             });
         }
@@ -1092,23 +1375,6 @@
             } else {
                 header.style.background = 'rgba(0, 0, 0, 0.95)';
                 header.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.5)';
-            }
-        });
-
-        // Effets sur les cartes de film
-        document.addEventListener('mouseover', function(e) {
-            if (e.target.closest('.movie-card')) {
-                const card = e.target.closest('.movie-card');
-                card.style.transform = 'translateY(-15px) scale(1.03)';
-                card.style.boxShadow = '0 25px 50px rgba(0, 0, 0, 0.8)';
-            }
-        });
-        
-        document.addEventListener('mouseout', function(e) {
-            if (e.target.closest('.movie-card')) {
-                const card = e.target.closest('.movie-card');
-                card.style.transform = 'translateY(0) scale(1)';
-                card.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.5)';
             }
         });
 
