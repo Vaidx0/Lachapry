@@ -26,4 +26,8 @@ Une plateforme de streaming moderne pour profiter de vos films et séries préf�
 
 ## 📸 Aperçu
 
- 
+Voici un aperçu de l'interface de **Lachapry** :
+
+![Aperçu de Lachapry](https://github.com/Vaidx0/Lachapry/blob/main/Preview.png)
+npm install
+npm run dev
