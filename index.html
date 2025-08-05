@@ -98,7 +98,6 @@
             border: none;
             margin-bottom: 1.5rem;
         }
-
         /* Streaming Platforms */
         .streaming-platforms {
             margin-top: 1.5rem;
@@ -143,8 +142,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-            font-weight: bold;
+        }
+        .platform-logo img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
         }
         .platform-name {
             font-size: 0.9rem;
@@ -155,7 +157,6 @@
             color: #888;
             margin-top: 0.25rem;
         }
-
         /* Platform specific colors */
         .netflix { background: linear-gradient(135deg, #e50914, #b20710); }
         .amazon { background: linear-gradient(135deg, #ff9900, #cc7a00); }
@@ -890,7 +891,7 @@
             constructor() {
                 // Encodage simple pour éviter l'exposition directe dans le code source
                 this.key = atob('NmE4YTVhYWQ1MzEyYzNlOGIzNGVjYWEwNzIzYWE4ODM=');
-                this.token = atob('ZXlKaGJHY2lPaUpJVXpJMU5pSjlMbUY0VmxOTWMySk9WVU51ZEZscE9VSkVUazlEWkVkMWRucFBaV2gzT0VFM2FUVjJObGd6TURReFZuUXlSVXhRWkZOdWMxVnJObXBpUlVOVFZWTjNkMU5tVDJsRU1WOTJPVTFaU3poRVNTdGxObTFuWkVJa2pGalJrWkNaaU1GdGY=');
+                this.token = atob('ZXlKaGJHY2lPaUpJVXpJMU5pSjlMbUY0VmxOTWMySk9VVU51ZEZscE9VSkVUazlEWkVkMWRucFBaV2gzT0VFM2FUVjJObGd6TURReFZuUXlSVXhRWkZOdWMxVnJObXBpUlVOVFZWTjNkMU5tVDJsRU1WOTJPVTFaU3poRVNTdGxObTFuWkVJa2pGalJrWkNaaU1GdGY=');
                 this.baseUrl = 'https://api.themoviedb.org/3';
                 this.imageBaseUrl = 'https://image.tmdb.org/t/p/w500';
                 // Vérification de l'intégrité des clés
@@ -1075,7 +1076,6 @@
                 platformCard.href = platform.url;
                 platformCard.target = '_blank';
                 platformCard.rel = 'noopener noreferrer';
-
                 platformCard.innerHTML = `
                     <div class="platform-logo">
                         <img src="${platform.logoUrl}" alt="${platform.name}">
@@ -1522,9 +1522,7 @@
                 top: ${Math.random() * 100}%;
                 animation: particleFloat ${3 + Math.random() * 4}s linear infinite;
             `;
-
             hero.appendChild(particle);
-
             setTimeout(() => {
                 particle.remove();
             }, 7000);
@@ -1576,7 +1574,6 @@
             const imageUrls = [
                 'https://via.placeholder.com/500x750/333/fff?text=Pas+d\'affiche'
             ];
-
             imageUrls.forEach(url => {
                 const img = new Image();
                 img.src = url;
@@ -1607,7 +1604,6 @@
                 currentSeriesPage = e.state.currentSeriesPage || 1;
                 currentGenre = e.state.currentGenre || 'all';
                 searchQuery = e.state.searchQuery || '';
-
                 // Recharger le contenu
                 loadMoviesFromAPI();
                 loadSeriesFromAPI();
@@ -1665,7 +1661,6 @@
                     animation: loading 2s infinite;
                 `;
                 document.body.appendChild(loader);
-
                 const style = document.createElement('style');
                 style.textContent = `
                     @keyframes loading {
@@ -1692,7 +1687,6 @@
             `;
             announcement.textContent = message;
             document.body.appendChild(announcement);
-
             setTimeout(() => {
                 document.body.removeChild(announcement);
             }, 1000);
@@ -1702,7 +1696,6 @@
         loadMoviesFromAPI = async function() {
             showGlobalLoading(true);
             announceToScreenReader('Chargement des films en cours...');
-
             try {
                 await originalLoadMovies();
                 announceToScreenReader('Films chargés avec succès');
@@ -1717,7 +1710,6 @@
         function toggleTheme() {
             isDarkMode = !isDarkMode;
             const root = document.documentElement;
-
             if (isDarkMode) {
                 root.style.setProperty('--bg-primary', '#0a0a0a');
                 root.style.setProperty('--bg-secondary', '#1a1a1a');
@@ -1737,7 +1729,6 @@
                 e.preventDefault();
                 document.getElementById('searchInput').focus();
             }
-
             // Flèches pour navigation
             if (e.key === 'ArrowLeft' && e.altKey) {
                 e.preventDefault();
@@ -1745,7 +1736,6 @@
                     document.getElementById('prevPage').click();
                 }
             }
-
             if (e.key === 'ArrowRight' && e.altKey) {
                 e.preventDefault();
                 document.getElementById('nextPage').click();
@@ -1769,7 +1759,6 @@
             const originalDisplayMovies = displayMovies;
             displayMovies = function(movies, containerId, isTV = false) {
                 originalDisplayMovies(movies, containerId, isTV);
-
                 // Observer les nouvelles images
                 const newPosters = document.querySelectorAll(`#${containerId} .movie-poster`);
                 newPosters.forEach(poster => imageObserver.observe(poster));
@@ -1781,4 +1770,3 @@
     </script>
 </body>
 </html>
-
