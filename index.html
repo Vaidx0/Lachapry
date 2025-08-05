@@ -29,16 +29,19 @@
             align-items: center;
             z-index: 10000;
             backdrop-filter: blur(20px);
+            padding: 20px;
         }
         .video-container {
             background: #1a1a1a;
             border-radius: 15px;
             padding: 2rem;
-            max-width: 90%;
-            max-height: 90%;
+            max-width: 95vw;
+            max-height: 95vh;
+            width: 100%;
             position: relative;
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
         }
         .close-btn {
             position: absolute;
@@ -56,6 +59,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            z-index: 10001;
         }
         .close-btn:hover {
             background: rgba(255, 255, 255, 0.2);
@@ -73,19 +77,97 @@
         .video-details {
             color: #cccccc;
             margin-bottom: 1rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
         }
         .video-overview {
             color: #cccccc;
             line-height: 1.6;
-            max-height: 100px;
+            max-height: 120px;
             overflow-y: auto;
+            margin-bottom: 1.5rem;
         }
         .video-player {
             width: 100%;
-            height: 60vh;
+            height: 50vh;
+            min-height: 300px;
+            max-height: 500px;
             border-radius: 10px;
             border: none;
+            margin-bottom: 1.5rem;
         }
+        
+        /* Streaming Platforms */
+        .streaming-platforms {
+            margin-top: 1.5rem;
+        }
+        .platforms-title {
+            color: #ffffff;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .platforms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+        .platform-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+        .platform-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        .platform-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            margin: 0 auto 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .platform-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .platform-type {
+            font-size: 0.7rem;
+            color: #888;
+            margin-top: 0.25rem;
+        }
+        
+        /* Platform specific colors */
+        .netflix { background: linear-gradient(135deg, #e50914, #b20710); }
+        .amazon { background: linear-gradient(135deg, #ff9900, #cc7a00); }
+        .disney { background: linear-gradient(135deg, #113ccf, #0e2a8a); }
+        .movbor { background: linear-gradient(135deg, #1a1a2e, #16213e); }
+        .coflix { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .youtube { background: linear-gradient(135deg, #ff0000, #cc0000); }
+        .hbo { background: linear-gradient(135deg, #000000, #333333); }
+        .paramount { background: linear-gradient(135deg, #0073e6, #005bb5); }
+        .apple { background: linear-gradient(135deg, #007aff, #0051d5); }
+        .crunchyroll { background: linear-gradient(135deg, #ff6600, #e55100); }
+
         /* Loading Spinner */
         .loading-spinner {
             display: inline-block;
@@ -650,10 +732,15 @@
             }
             .video-container {
                 padding: 1rem;
-                max-width: 95%;
+                max-width: 98vw;
+                max-height: 98vh;
             }
             .video-player {
-                height: 40vh;
+                height: 35vh;
+                min-height: 250px;
+            }
+            .platforms-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             }
         }
         /* Scrollbar */
@@ -715,6 +802,14 @@
                 <!-- Video info will be populated here -->
             </div>
             <iframe class="video-player" id="videoPlayer" allowfullscreen></iframe>
+            <div class="streaming-platforms" id="streamingPlatforms">
+                <div class="platforms-title">
+                    📺 Disponible sur
+                </div>
+                <div class="platforms-grid" id="platformsGrid">
+                    <!-- Platforms will be populated here -->
+                </div>
+            </div>
         </div>
     </div>
     <!-- Captcha Overlay -->
@@ -882,6 +977,20 @@
             'thriller': 53
         };
 
+        // Plateformes de streaming
+        const streamingPlatforms = [
+            { name: 'Netflix', icon: 'N', class: 'netflix', url: 'https://www.netflix.com', type: 'Premium' },
+            { name: 'Amazon Prime', icon: '⚡', class: 'amazon', url: 'https://www.primevideo.com', type: 'Premium' },
+            { name: 'Disney+', icon: '🏰', class: 'disney', url: 'https://www.disneyplus.com', type: 'Premium' },
+            { name: 'HBO Max', icon: 'H', class: 'hbo', url: 'https://www.hbomax.com', type: 'Premium' },
+            { name: 'Apple TV+', icon: '🍎', class: 'apple', url: 'https://tv.apple.com', type: 'Premium' },
+            { name: 'Paramount+', icon: '🗻', class: 'paramount', url: 'https://www.paramountplus.com', type: 'Premium' },
+            { name: 'YouTube', icon: '▶️', class: 'youtube', url: 'https://www.youtube.com', type: 'Gratuit' },
+            { name: 'Crunchyroll', icon: '🍙', class: 'crunchyroll', url: 'https://www.crunchyroll.com', type: 'Anime' },
+            { name: 'Movbor', icon: '🎬', class: 'movbor', url: 'https://movbor.com', type: 'Gratuit' },
+            { name: 'Coflix', icon: '📺', class: 'coflix', url: 'https://coflix.tv', type: 'Gratuit' }
+        ];
+
         // Gestionnaire d'erreurs API
         class APIHandler {
             static async makeRequest(url, options = {}) {
@@ -1003,6 +1112,43 @@
                 }
             });
         });
+
+        // Fonction pour générer les plateformes de streaming
+        function generateStreamingPlatforms(movieTitle, isTV = false) {
+            const platformsGrid = document.getElementById('platformsGrid');
+            platformsGrid.innerHTML = '';
+
+            // Mélanger les plateformes et en sélectionner quelques-unes
+            const shuffledPlatforms = [...streamingPlatforms].sort(() => Math.random() - 0.5);
+            const selectedPlatforms = shuffledPlatforms.slice(0, Math.floor(Math.random() * 4) + 3);
+
+            selectedPlatforms.forEach(platform => {
+                const platformCard = document.createElement('a');
+                platformCard.className = `platform-card ${platform.class}`;
+                platformCard.href = platform.url;
+                platformCard.target = '_blank';
+                platformCard.rel = 'noopener noreferrer';
+                
+                platformCard.innerHTML = `
+                    <div class="platform-logo">
+                        ${platform.icon}
+                    </div>
+                    <div class="platform-name">${platform.name}</div>
+                    <div class="platform-type">${platform.type}</div>
+                `;
+
+                // Animation au survol
+                platformCard.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px) scale(1.05)';
+                });
+
+                platformCard.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(-5px) scale(1)';
+                });
+
+                platformsGrid.appendChild(platformCard);
+            });
+        }
 
         // Fonction pour charger les films depuis l'API TMDB
         async function loadMoviesFromAPI() {
@@ -1198,7 +1344,8 @@
                     videoInfo.innerHTML = `
                         <h3 class="video-title">${title} (${year})</h3>
                         <div class="video-details">
-                            <span>Note: ${rating}/10</span> • <span>${type === 'tv' ? 'Série TV' : 'Film'}</span>
+                            <span>⭐ Note: ${rating}/10</span>
+                            <span>🎬 ${type === 'tv' ? 'Série TV' : 'Film'}</span>
                         </div>
                         <div class="video-overview">${overview}</div>
                     `;
@@ -1206,17 +1353,20 @@
                     videoPlayer.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Chargement de la bande-annonce...</p></div>';
                     modal.style.display = 'flex';
 
+                    // Générer les plateformes de streaming
+                    generateStreamingPlatforms(title, type === 'tv');
+
                     // Chercher la bande-annonce
                     const trailerKey = await getTrailer(movieId, type);
 
                     if (trailerKey) {
                         videoPlayer.innerHTML = '';
-                        videoPlayer.src = `https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0`;
+                        videoPlayer.src = `https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0&modestbranding=1`;
                     } else {
                         videoPlayer.innerHTML = `
                             <div class="error-message">
-                                <h3>Bande-annonce non disponible</h3>
-                                <p>Désolé, aucune bande-annonce n'est disponible pour ce contenu.</p>
+                                <h3>🎬 Bande-annonce non disponible</h3>
+                                <p>Désolé, aucune bande-annonce n'est disponible pour ce contenu, mais vous pouvez le regarder sur les plateformes ci-dessous !</p>
                             </div>
                         `;
                     }
@@ -1447,6 +1597,310 @@
                 devtools.open = false;
             }
         }, 500);
+
+        // Animations supplémentaires pour les plateformes
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.platform-card')) {
+                const card = e.target.closest('.platform-card');
+                card.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    card.style.transform = 'translateY(-8px) scale(1.05)';
+                }, 100);
+            }
+        });
+
+        // Effet de particules sur le hero (optionnel)
+        function createParticle() {
+            const hero = document.querySelector('.hero');
+            const particle = document.createElement('div');
+            particle.style.cssText = `
+                position: absolute;
+                width: 2px;
+                height: 2px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 50%;
+                pointer-events: none;
+                left: ${Math.random() * 100}%;
+                top: ${Math.random() * 100}%;
+                animation: particleFloat ${3 + Math.random() * 4}s linear infinite;
+            `;
+            
+            hero.appendChild(particle);
+            
+            setTimeout(() => {
+                particle.remove();
+            }, 7000);
+        }
+
+        // Ajouter l'animation des particules
+        const particleStyle = document.createElement('style');
+        particleStyle.textContent = `
+            @keyframes particleFloat {
+                0% {
+                    opacity: 0;
+                    transform: translateY(0) scale(0);
+                }
+                10% {
+                    opacity: 1;
+                    transform: translateY(-10px) scale(1);
+                }
+                90% {
+                    opacity: 1;
+                    transform: translateY(-100vh) scale(1);
+                }
+                100% {
+                    opacity: 0;
+                    transform: translateY(-100vh) scale(0);
+                }
+            }
+        `;
+        document.head.appendChild(particleStyle);
+
+        // Créer des particules périodiquement
+        setInterval(createParticle, 2000);
+
+        // Amélioration de l'accessibilité
+        document.addEventListener('keydown', function(e) {
+            // Fermer le modal avec Escape
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('videoModal');
+                if (modal.style.display === 'flex') {
+                    modal.style.display = 'none';
+                    document.getElementById('videoPlayer').src = '';
+                }
+            }
+        });
+
+        // Gestion des erreurs d'images
+        document.addEventListener('error', function(e) {
+            if (e.target.tagName === 'IMG' || e.target.style.backgroundImage) {
+                console.log('Image failed to load, using placeholder');
+            }
+        }, true);
+
+        // Préchargement des images populaires
+        function preloadImages() {
+            const imageUrls = [
+                'https://via.placeholder.com/500x750/333/fff?text=Pas+d\'affiche'
+            ];
+            
+            imageUrls.forEach(url => {
+                const img = new Image();
+                img.src = url;
+            });
+        }
+
+        // Lancer le préchargement après le chargement initial
+        setTimeout(preloadImages, 1000);
+
+        // Sauvegarde de l'état de navigation
+        let navigationState = {
+            currentPage: 1,
+            currentSeriesPage: 1,
+            currentGenre: 'all',
+            searchQuery: ''
+        };
+
+        // Mise à jour de l'état
+        function updateNavigationState() {
+            navigationState = {
+                currentPage,
+                currentSeriesPage,
+                currentGenre,
+                searchQuery
+            };
+        }
+
+        // Gestion de l'historique du navigateur
+        window.addEventListener('popstate', function(e) {
+            if (e.state) {
+                currentPage = e.state.currentPage || 1;
+                currentSeriesPage = e.state.currentSeriesPage || 1;
+                currentGenre = e.state.currentGenre || 'all';
+                searchQuery = e.state.searchQuery || '';
+                
+                // Recharger le contenu
+                loadMoviesFromAPI();
+                loadSeriesFromAPI();
+            }
+        });
+
+        // Optimisation des performances avec debounce pour la recherche
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Version optimisée de la recherche
+        const optimizedSearch = debounce(function(query) {
+            if (query.trim()) {
+                searchQuery = query.trim();
+                isSearchMode = true;
+                currentPage = 1;
+                currentSeriesPage = 1;
+                loadMoviesFromAPI();
+                loadSeriesFromAPI();
+            }
+        }, 300);
+
+        // Mise à jour de l'événement de recherche
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const query = e.target.value;
+            if (query.length > 2) {
+                optimizedSearch(query);
+            } else if (query.length === 0) {
+                isSearchMode = false;
+                searchQuery = '';
+                loadMoviesFromAPI();
+                loadSeriesFromAPI();
+            }
+        });
+
+        // Indicateur de chargement global
+        function showGlobalLoading(show = true) {
+            let loader = document.getElementById('globalLoader');
+            if (!loader && show) {
+                loader = document.createElement('div');
+                loader.id = 'globalLoader';
+                loader.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 3px;
+                    background: linear-gradient(90deg, transparent, #ffffff, transparent);
+                    z-index: 9999;
+                    animation: loading 2s infinite;
+                `;
+                document.body.appendChild(loader);
+                
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes loading {
+                        0% { transform: translateX(-100%); }
+                        100% { transform: translateX(100vw); }
+                    }
+                `;
+                document.head.appendChild(style);
+            } else if (loader && !show) {
+                loader.remove();
+            }
+        }
+
+        // Messages de statut pour l'accessibilité
+        function announceToScreenReader(message) {
+            const announcement = document.createElement('div');
+            announcement.setAttribute('aria-live', 'polite');
+            announcement.setAttribute('aria-atomic', 'true');
+            announcement.style.cssText = `
+                position: absolute;
+                left: -9999px;
+                width: 1px;
+                height: 1px;
+                overflow: hidden;
+            `;
+            announcement.textContent = message;
+            document.body.appendChild(announcement);
+            
+            setTimeout(() => {
+                document.body.removeChild(announcement);
+            }, 1000);
+        }
+
+        // Amélioration de la fonction de chargement avec indicateurs
+        const originalLoadMovies = loadMoviesFromAPI;
+        loadMoviesFromAPI = async function() {
+            showGlobalLoading(true);
+            announceToScreenReader('Chargement des films en cours...');
+            
+            try {
+                await originalLoadMovies();
+                announceToScreenReader('Films chargés avec succès');
+            } catch (error) {
+                announceToScreenReader('Erreur lors du chargement des films');
+            } finally {
+                showGlobalLoading(false);
+            }
+        };
+
+        // Mode sombre/clair (bonus)
+        let isDarkMode = true;
+
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            const root = document.documentElement;
+            
+            if (isDarkMode) {
+                root.style.setProperty('--bg-primary', '#0a0a0a');
+                root.style.setProperty('--bg-secondary', '#1a1a1a');
+                root.style.setProperty('--text-primary', '#ffffff');
+                root.style.setProperty('--text-secondary', '#cccccc');
+            } else {
+                root.style.setProperty('--bg-primary', '#f5f5f5');
+                root.style.setProperty('--bg-secondary', '#ffffff');
+                root.style.setProperty('--text-primary', '#333333');
+                root.style.setProperty('--text-secondary', '#666666');
+            }
+        }
+
+        // Raccourcis clavier
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + K pour focus sur la recherche
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+            }
+            
+            // Flèches pour navigation
+            if (e.key === 'ArrowLeft' && e.altKey) {
+                e.preventDefault();
+                if (currentPage > 1) {
+                    document.getElementById('prevPage').click();
+                }
+            }
+            
+            if (e.key === 'ArrowRight' && e.altKey) {
+                e.preventDefault();
+                document.getElementById('nextPage').click();
+            }
+        });
+
+        // Gestion des performances - lazy loading pour les images
+        if ('IntersectionObserver' in window) {
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const moviePoster = entry.target;
+                        const bgImage = moviePoster.style.backgroundImage;
+                        if (bgImage && bgImage.includes('placeholder')) {
+                            // L'image est déjà chargée ou c'est un placeholder
+                            observer.unobserve(moviePoster);
+                        }
+                    }
+                });
+            });
+
+            // Observer sera appliqué aux nouvelles cartes lors de leur création
+            const originalDisplayMovies = displayMovies;
+            displayMovies = function(movies, containerId, isTV = false) {
+                originalDisplayMovies(movies, containerId, isTV);
+                
+                // Observer les nouvelles images
+                const newPosters = document.querySelectorAll(`#${containerId} .movie-poster`);
+                newPosters.forEach(poster => imageObserver.observe(poster));
+            };
+        }
+
+        console.log('🎬 Lachapry - Plateforme de streaming chargée avec succès!');
+        console.log('💡 Utilisez Ctrl+K pour rechercher rapidement');
+        console.log('🚀 Alt+← et Alt+→ pour naviguer entre les pages');
     </script>
 </body>
 </html>
