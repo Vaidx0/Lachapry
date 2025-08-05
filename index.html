@@ -18,6 +18,101 @@
             overflow-x: hidden;
         }
 
+        /* Modal Video Player */
+        .video-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(20px);
+        }
+
+        .video-container {
+            background: #1a1a1a;
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+
+        .video-info {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .video-title {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            color: #ffffff;
+        }
+
+        .video-details {
+            color: #cccccc;
+            margin-bottom: 1rem;
+        }
+
+        .video-overview {
+            color: #cccccc;
+            line-height: 1.6;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .video-player {
+            width: 100%;
+            height: 60vh;
+            border-radius: 10px;
+            border: none;
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 1s ease-in-out infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         /* Captcha Styles */
         .captcha-overlay {
             position: fixed;
@@ -623,6 +718,15 @@
             .captcha-btn {
                 width: 100%;
             }
+
+            .video-container {
+                padding: 1rem;
+                max-width: 95%;
+            }
+
+            .video-player {
+                height: 40vh;
+            }
         }
 
         /* Scrollbar */
@@ -666,9 +770,35 @@
                 transform: translateY(0);
             }
         }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #cccccc;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 2rem;
+            color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+            border-radius: 10px;
+            margin: 2rem 0;
+        }
     </style>
 </head>
 <body>
+    <!-- Video Modal -->
+    <div class="video-modal" id="videoModal">
+        <div class="video-container">
+            <button class="close-btn" id="closeModal">×</button>
+            <div class="video-info" id="videoInfo">
+                <!-- Video info will be populated here -->
+            </div>
+            <iframe class="video-player" id="videoPlayer" allowfullscreen></iframe>
+        </div>
+    </div>
+
     <!-- Captcha Overlay -->
     <div class="captcha-overlay" id="captchaOverlay">
         <div class="captcha-container">
@@ -716,7 +846,7 @@
     <section class="hero" id="accueil">
         <div class="hero-content">
             <h1>Lachapry</h1>
-            <p>Découvrez des milliers de films et séries en streaming illimité</p>
+            <p>Découvrez des milliers de films et séries en streaming avec bandes-annonces officielles</p>
             <a href="#films" class="cta-button">Commencer à regarder</a>
         </div>
     </section>
@@ -729,14 +859,20 @@
             <button class="category-btn" data-genre="action">Action</button>
             <button class="category-btn" data-genre="comedy">Comédie</button>
             <button class="category-btn" data-genre="drama">Drame</button>
-            <button class="category-btn" data-genre="scifi">Sci-Fi</button>
             <button class="category-btn" data-genre="horror">Horreur</button>
+            <button class="category-btn" data-genre="romance">Romance</button>
+            <button class="category-btn" data-genre="thriller">Thriller</button>
         </div>
 
         <!-- Films Section -->
         <section class="section" id="films">
             <h2 class="section-title">Films Populaires</h2>
-            <div class="movies-grid" id="moviesGrid"></div>
+            <div class="movies-grid" id="moviesGrid">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Chargement des films populaires...</p>
+                </div>
+            </div>
             <div class="pagination" id="pagination">
                 <button class="page-btn" id="prevPage">Précédent</button>
                 <span id="pageInfo">Page 1</span>
@@ -747,7 +883,12 @@
         <!-- Séries Section -->
         <section class="section" id="series">
             <h2 class="section-title">Séries Tendance</h2>
-            <div class="movies-grid" id="seriesGrid"></div>
+            <div class="movies-grid" id="seriesGrid">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Chargement des séries populaires...</p>
+                </div>
+            </div>
             <div class="pagination" id="seriesPagination">
                 <button class="page-btn" id="prevSeriesPage">Précédent</button>
                 <span id="seriesPageInfo">Page 1</span>
@@ -758,289 +899,33 @@
 
     <!-- Footer -->
     <footer class="footer">
-        <p>&copy; 2025 Lachapry. Tous droits réservés.</p>
+        <p>&copy; 2025 Lachapry. Tous droits réservés. Données fournies par TMDB.</p>
     </footer>
 
     <script>
-        // Base de données de films et séries populaires
-        const moviesDatabase = {
-            action: [
-                {
-                    id: 1,
-                    title: "Top Gun: Maverick",
-                    genre: "Action • Drame",
-                    year: "2022",
-                    rating: 8.3,
-                    poster: "https://image.tmdb.org/t/p/w500/62HCnUTziyWcpDaBO2i1DX17ljH.jpg"
-                },
-                {
-                    id: 2,
-                    title: "Avatar: La Voie de l'eau",
-                    genre: "Action • Aventure",
-                    year: "2022",
-                    rating: 7.6,
-                    poster: "https://image.tmdb.org/t/p/w500/t6HIqrRAclMCA60NsSmeqe9RmNV.jpg"
-                },
-                {
-                    id: 3,
-                    title: "Spider-Man: No Way Home",
-                    genre: "Action • Aventure",
-                    year: "2021",
-                    rating: 8.2,
-                    poster: "https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg"
-                },
-                {
-                    id: 4,
-                    title: "Fast & Furious 9",
-                    genre: "Action • Crime",
-                    year: "2021",
-                    rating: 5.2,
-                    poster: "https://image.tmdb.org/t/p/w500/bOFaAXmWWXC3Rbv4u4uM9ZSzRXP.jpg"
-                },
-                {
-                    id: 5,
-                    title: "John Wick: Chapter 4",
-                    genre: "Action • Crime",
-                    year: "2023",
-                    rating: 7.7,
-                    poster: "https://image.tmdb.org/t/p/w500/vZloFAK7NmvMGKE7VkF5UHaz0I.jpg"
-                },
-                {
-                    id: 6,
-                    title: "Mission: Impossible 7",
-                    genre: "Action • Thriller",
-                    year: "2023",
-                    rating: 7.8,
-                    poster: "https://image.tmdb.org/t/p/w500/NNxYkU70HPurnNCSiCjYAmacwm.jpg"
-                }
-            ],
-            comedy: [
-                {
-                    id: 7,
-                    title: "Free Guy",
-                    genre: "Comédie • Action",
-                    year: "2021",
-                    rating: 7.1,
-                    poster: "https://image.tmdb.org/t/p/w500/xmbU4JTUm8rsdtn7Y3Fcm30GpeT.jpg"
-                },
-                {
-                    id: 8,
-                    title: "The Grand Budapest Hotel",
-                    genre: "Comédie • Drame",
-                    year: "2014",
-                    rating: 8.1,
-                    poster: "https://image.tmdb.org/t/p/w500/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg"
-                },
-                {
-                    id: 9,
-                    title: "Knives Out",
-                    genre: "Comédie • Crime",
-                    year: "2019",
-                    rating: 7.9,
-                    poster: "https://image.tmdb.org/t/p/w500/pThyQovXQrw2m0s9x82twj48Jq4.jpg"
-                },
-                {
-                    id: 10,
-                    title: "La La Land",
-                    genre: "Comédie • Drame",
-                    year: "2016",
-                    rating: 8.0,
-                    poster: "https://image.tmdb.org/t/p/w500/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg"
-                }
-            ],
-            drama: [
-                {
-                    id: 11,
-                    title: "The Batman",
-                    genre: "Crime • Drame",
-                    year: "2022",
-                    rating: 7.8,
-                    poster: "https://image.tmdb.org/t/p/w500/b0PlSFdDwbyK0cf5RxwDpaOJQvQ.jpg"
-                },
-                {
-                    id: 12,
-                    title: "Dune",
-                    genre: "Drame • Sci-Fi",
-                    year: "2021",
-                    rating: 8.0,
-                    poster: "https://image.tmdb.org/t/p/w500/d5NXSklXo0qyIYkgV94XAgMIckC.jpg"
-                },
-                {
-                    id: 13,
-                    title: "CODA",
-                    genre: "Drame • Musique",
-                    year: "2021",
-                    rating: 8.0,
-                    poster: "https://image.tmdb.org/t/p/w500/BzVjmm8l23rPsijLiNLUzuQtyd.jpg"
-                },
-                {
-                    id: 14,
-                    title: "The Power of the Dog",
-                    genre: "Drame • Western",
-                    year: "2021",
-                    rating: 6.8,
-                    poster: "https://image.tmdb.org/t/p/w500/kEVQZIX7d8UkpB3vNdniy2FpNaU.jpg"
-                }
-            ],
-            scifi: [
-                {
-                    id: 15,
-                    title: "Blade Runner 2049",
-                    genre: "Sci-Fi • Thriller",
-                    year: "2017",
-                    rating: 8.0,
-                    poster: "https://image.tmdb.org/t/p/w500/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg"
-                },
-                {
-                    id: 16,
-                    title: "Interstellar",
-                    genre: "Sci-Fi • Drame",
-                    year: "2014",
-                    rating: 8.6,
-                    poster: "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg"
-                },
-                {
-                    id: 17,
-                    title: "Matrix Resurrections",
-                    genre: "Sci-Fi • Action",
-                    year: "2021",
-                    rating: 5.7,
-                    poster: "https://image.tmdb.org/t/p/w500/8c4a8kE7PizaGQQnditMmI1xbRp.jpg"
-                },
-                {
-                    id: 18,
-                    title: "Ex Machina",
-                    genre: "Sci-Fi • Drame",
-                    year: "2014",
-                    rating: 7.7,
-                    poster: "https://image.tmdb.org/t/p/w500/btTdmkgIvOi0FFip1sPuZI2oQG6.jpg"
-                }
-            ],
-            horror: [
-                {
-                    id: 19,
-                    title: "A Quiet Place",
-                    genre: "Horreur • Thriller",
-                    year: "2018",
-                    rating: 7.5,
-                    poster: "https://image.tmdb.org/t/p/w500/nAU74GmpUk7t5iklEp3bufwDq4n.jpg"
-                },
-                {
-                    id: 20,
-                    title: "Get Out",
-                    genre: "Horreur • Thriller",
-                    year: "2017",
-                    rating: 7.7,
-                    poster: "https://image.tmdb.org/t/p/w500/tFXHpm3lIU7DqT0L5oOqVk6I89n.jpg"
-                },
-                {
-                    id: 21,
-                    title: "Hereditary",
-                    genre: "Horreur • Drame",
-                    year: "2018",
-                    rating: 7.3,
-                    poster: "https://image.tmdb.org/t/p/w500/p81a0FPVPmeT6OhzJU8NzxkOLDV.jpg"
-                },
-                {
-                    id: 22,
-                    title: "The Conjuring",
-                    genre: "Horreur • Thriller",
-                    year: "2013",
-                    rating: 7.5,
-                    poster: "https://image.tmdb.org/t/p/w500/wVYREutTvI2tmxr6ujrHT704wGF.jpg"
-                }
-            ]
-        };
-
-        const seriesDatabase = [
-            {
-                id: 23,
-                title: "Stranger Things",
-                genre: "Sci-Fi • Horreur",
-                year: "2016-2022",
-                rating: 8.7,
-                poster: "https://image.tmdb.org/t/p/w500/x2LSRK2Cm7MZhjluni1msVJ3wDF.jpg"
-            },
-            {
-                id: 24,
-                title: "The Witcher",
-                genre: "Fantasy • Action",
-                year: "2019-",
-                rating: 8.2,
-                poster: "https://image.tmdb.org/t/p/w500/7vjaCdMw15FEbXyLQTVa04URsPm.jpg"
-            },
-            {
-                id: 25,
-                title: "House of the Dragon",
-                genre: "Fantasy • Drame",
-                year: "2022-",
-                rating: 8.5,
-                poster: "https://image.tmdb.org/t/p/w500/7QMsOTMUswlwxJP0rTTZfmz2tX2.jpg"
-            },
-            {
-                id: 26,
-                title: "The Boys",
-                genre: "Action • Comédie",
-                year: "2019-",
-                rating: 8.7,
-                poster: "https://image.tmdb.org/t/p/w500/mY7SeH4HFFxW1hiI6cWuwCRKptN.jpg"
-            },
-            {
-                id: 27,
-                title: "Wednesday",
-                genre: "Comédie • Horreur",
-                year: "2022-",
-                rating: 8.1,
-                poster: "https://image.tmdb.org/t/p/w500/9PFonBhy4cQy7Jz20NpMygczOkv.jpg"
-            },
-            {
-                id: 28,
-                title: "The Crown",
-                genre: "Drame • Histoire",
-                year: "2016-2023",
-                rating: 8.6,
-                poster: "https://image.tmdb.org/t/p/w500/1M876KQUEYsZFHEGjmbmYw1WkVq.jpg"
-            },
-            {
-                id: 29,
-                title: "Breaking Bad",
-                genre: "Crime • Drame",
-                year: "2008-2013",
-                rating: 9.5,
-                poster: "https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg"
-            },
-            {
-                id: 30,
-                title: "Game of Thrones",
-                genre: "Fantasy • Drame",
-                year: "2011-2019",
-                rating: 9.2,
-                poster: "https://image.tmdb.org/t/p/w500/u3bZgnGQ9T01sWNhyveQz0wH0Hl.jpg"
-            },
-            {
-                id: 31,
-                title: "The Mandalorian",
-                genre: "Sci-Fi • Action",
-                year: "2019-",
-                rating: 8.8,
-                poster: "https://image.tmdb.org/t/p/w500/sWgBv7LV2PRoQgkxwlibdGXKz1S.jpg"
-            },
-            {
-                id: 32,
-                title: "Euphoria",
-                genre: "Drame",
-                year: "2019-",
-                rating: 8.4,
-                poster: "https://image.tmdb.org/t/p/w500/jtnfNzqZwN4E32FGGxx1YZaBWWf.jpg"
-            }
-        ];
-
+        // Configuration API TMDB
+        const TMDB_API_KEY = 'eb15b5b06beb3c8c7513e1b3e5d6a68c'; // Clé API publique TMDB
+        const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
+        const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
+        
         // Variables pour la pagination et l'état
         let currentPage = 1;
         let currentSeriesPage = 1;
         let currentGenre = 'all';
         let currentTab = 'accueil';
+        let isSearchMode = false;
+        let searchQuery = '';
         
+        // Mapping des genres
+        const genreMap = {
+            'action': 28,
+            'comedy': 35,
+            'drama': 18,
+            'horror': 27,
+            'romance': 10749,
+            'thriller': 53
+        };
+
         // Captcha Script
         document.addEventListener('DOMContentLoaded', function() {
             // Générer un captcha aléatoire
@@ -1066,7 +951,6 @@
             
             // Actualiser le captcha
             refreshBtn.addEventListener('click', function() {
-                // Animation de refresh
                 captchaText.style.animation = 'fadeOut 0.3s forwards';
                 setTimeout(() => {
                     currentCaptcha = generateCaptcha();
@@ -1076,7 +960,6 @@
                     captchaText.style.animation = 'fadeIn 0.3s forwards';
                 }, 300);
                 
-                // Animation de rotation
                 this.style.transform = 'rotate(360deg)';
                 setTimeout(() => {
                     this.style.transform = 'rotate(0deg)';
@@ -1086,35 +969,30 @@
             // Vérifier le captcha
             verifyBtn.addEventListener('click', function() {
                 if (captchaInput.value.toUpperCase() === currentCaptcha) {
-                    // Animation de validation réussie
                     verifyBtn.innerHTML = '✓ Validé';
                     verifyBtn.style.background = '#4CAF50';
                     
-                    // Animation de disparition du captcha
                     captchaOverlay.style.animation = 'fadeOut 0.5s ease-out forwards';
                     setTimeout(() => {
                         captchaOverlay.classList.add('hidden');
                         document.body.style.overflow = 'auto';
                         
-                        // Charger les contenus
-                        loadMovies();
-                        loadSeries();
+                        // Charger les contenus depuis l'API
+                        loadMoviesFromAPI();
+                        loadSeriesFromAPI();
                     }, 500);
                 } else {
-                    // Captcha incorrect
                     captchaError.style.display = 'block';
                     captchaInput.style.borderColor = '#ff4444';
                     captchaInput.value = '';
                     currentCaptcha = generateCaptcha();
                     
-                    // Animation de changement de captcha
                     captchaText.style.animation = 'shake 0.5s';
                     setTimeout(() => {
                         captchaText.textContent = currentCaptcha;
                         captchaText.style.animation = '';
                     }, 500);
                     
-                    // Animation d'erreur sur l'input
                     captchaInput.style.animation = 'shake 0.5s';
                     setTimeout(() => {
                         captchaInput.style.animation = '';
@@ -1127,8 +1005,8 @@
             if (isVerified) {
                 captchaOverlay.classList.add('hidden');
                 document.body.style.overflow = 'auto';
-                loadMovies();
-                loadSeries();
+                loadMoviesFromAPI();
+                loadSeriesFromAPI();
             } else {
                 document.body.style.overflow = 'hidden';
             }
@@ -1139,48 +1017,67 @@
                     verifyBtn.click();
                 }
             });
-
-            // Effet de hover sur les boutons
-            const captchaButtons = document.querySelectorAll('.captcha-btn');
-            captchaButtons.forEach(btn => {
-                btn.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-3px)';
-                    this.style.boxShadow = '0 12px 30px rgba(0, 0, 0, 0.6)';
-                });
-                btn.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(0)';
-                    this.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.5)';
-                });
-            });
         });
 
-        // Fonction pour charger les films
-        function loadMovies() {
-            let moviesToShow = [];
-            
-            if (currentGenre === 'all') {
-                moviesToShow = Object.values(moviesDatabase).flat();
-            } else {
-                moviesToShow = moviesDatabase[currentGenre] || [];
+        // Fonction pour charger les films depuis l'API TMDB
+        async function loadMoviesFromAPI() {
+            try {
+                let url;
+                
+                if (isSearchMode && searchQuery) {
+                    url = `${TMDB_BASE_URL}/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(searchQuery)}&page=${currentPage}&language=fr-FR`;
+                } else if (currentGenre === 'all') {
+                    url = `${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}&page=${currentPage}&language=fr-FR`;
+                } else {
+                    const genreId = genreMap[currentGenre];
+                    url = `${TMDB_BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&page=${currentPage}&language=fr-FR&sort_by=popularity.desc`;
+                }
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.results) {
+                    displayMovies(data.results, 'moviesGrid', false);
+                    updatePaginationInfo(data.total_pages, 'pageInfo', false);
+                } else {
+                    throw new Error('Aucun résultat trouvé');
+                }
+            } catch (error) {
+                console.error('Erreur lors du chargement des films:', error);
+                showError('moviesGrid', 'Erreur lors du chargement des films. Veuillez réessayer.');
             }
-            
-            // Pagination
-            const startIndex = (currentPage - 1) * 6;
-            const endIndex = startIndex + 6;
-            const paginatedMovies = moviesToShow.slice(startIndex, endIndex);
-            
-            displayMovies(paginatedMovies, 'moviesGrid');
-            updatePaginationInfo(Math.ceil(moviesToShow.length / 6), 'pageInfo');
         }
         
-        // Fonction pour charger les séries
-        function loadSeries() {
-            const startIndex = (currentSeriesPage - 1) * 6;
-            const endIndex = startIndex + 6;
-            const paginatedSeries = seriesDatabase.slice(startIndex, endIndex);
-            
-            displayMovies(paginatedSeries, 'seriesGrid', true);
-            updatePaginationInfo(Math.ceil(seriesDatabase.length / 6), 'seriesPageInfo', true);
+        // Fonction pour charger les séries depuis l'API TMDB
+        async function loadSeriesFromAPI() {
+            try {
+                let url;
+                
+                if (isSearchMode && searchQuery) {
+                    url = `${TMDB_BASE_URL}/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(searchQuery)}&page=${currentSeriesPage}&language=fr-FR`;
+                } else {
+                    url = `${TMDB_BASE_URL}/tv/popular?api_key=${TMDB_API_KEY}&page=${currentSeriesPage}&language=fr-FR`;
+                }
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.results) {
+                    displayMovies(data.results, 'seriesGrid', true);
+                    updatePaginationInfo(data.total_pages, 'seriesPageInfo', true);
+                } else {
+                    throw new Error('Aucun résultat trouvé');
+                }
+            } catch (error) {
+                console.error('Erreur lors du chargement des séries:', error);
+                showError('seriesGrid', 'Erreur lors du chargement des séries. Veuillez réessayer.');
+            }
+        }
+        
+        // Fonction pour afficher une erreur
+        function showError(containerId, message) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `<div class="error-message">${message}</div>`;
         }
         
         // Fonction pour afficher les films/séries
@@ -1188,21 +1085,38 @@
             const container = document.getElementById(containerId);
             container.innerHTML = '';
             
+            if (movies.length === 0) {
+                container.innerHTML = `<div class="error-message">Aucun résultat trouvé pour votre recherche.</div>`;
+                return;
+            }
+            
             movies.forEach((movie, index) => {
-                const posterPath = movie.poster || 'https://via.placeholder.com/300x450?text=Affiche+non+disponible';
-                const rating = movie.rating ? movie.rating.toFixed(1) : 'N/A';
-                const stars = getStarRating(movie.rating);
+                const title = isTV ? movie.name : movie.title;
+                const releaseDate = isTV ? movie.first_air_date : movie.release_date;
+                const year = releaseDate ? new Date(releaseDate).getFullYear() : 'N/A';
+                const posterPath = movie.poster_path 
+                    ? `${TMDB_IMAGE_BASE_URL}${movie.poster_path}` 
+                    : 'https://via.placeholder.com/500x750/333/fff?text=Pas+d\'affiche';
+                const rating = movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A';
+                const stars = getStarRating(movie.vote_average);
+                const overview = movie.overview || 'Aucune description disponible.';
                 
                 const movieCard = document.createElement('div');
                 movieCard.className = 'movie-card';
                 movieCard.style.animationDelay = `${index * 0.1}s`;
                 movieCard.innerHTML = `
                     <div class="movie-poster" style="background-image: url('${posterPath}')">
-                        <button class="play-button" data-id="${movie.id}">▶</button>
+                        <button class="play-button" 
+                                data-id="${movie.id}" 
+                                data-title="${title}" 
+                                data-overview="${overview}"
+                                data-year="${year}"
+                                data-rating="${rating}"
+                                data-type="${isTV ? 'tv' : 'movie'}">▶</button>
                     </div>
                     <div class="movie-info">
-                        <h3 class="movie-title">${movie.title}</h3>
-                        <p class="movie-genre">${movie.genre} • ${movie.year}</p>
+                        <h3 class="movie-title">${title}</h3>
+                        <p class="movie-genre">${year} • ${isTV ? 'Série TV' : 'Film'}</p>
                         <div class="movie-rating">
                             <span class="stars">${stars}</span>
                             <span>${rating}/10</span>
@@ -1229,8 +1143,109 @@
         function updatePaginationInfo(totalPages, elementId, isTV = false) {
             const element = document.getElementById(elementId);
             const current = isTV ? currentSeriesPage : currentPage;
-            element.textContent = `Page ${current} sur ${totalPages}`;
+            element.textContent = `Page ${current} sur ${Math.min(totalPages, 500)}`; // TMDB limite à 500 pages
         }
+
+        // Fonction pour obtenir la bande-annonce
+        async function getTrailer(movieId, type = 'movie') {
+            try {
+                const response = await fetch(
+                    `${TMDB_BASE_URL}/${type}/${movieId}/videos?api_key=${TMDB_API_KEY}&language=fr-FR`
+                );
+                const data = await response.json();
+                
+                // Chercher d'abord en français, puis en anglais
+                let trailer = data.results.find(video => 
+                    video.type === 'Trailer' && video.site === 'YouTube'
+                );
+                
+                if (!trailer && data.results.length > 0) {
+                    // Si pas de trailer français, essayer en anglais
+                    const enResponse = await fetch(
+                        `${TMDB_BASE_URL}/${type}/${movieId}/videos?api_key=${TMDB_API_KEY}&language=en-US`
+                    );
+                    const enData = await enResponse.json();
+                    trailer = enData.results.find(video => 
+                        video.type === 'Trailer' && video.site === 'YouTube'
+                    );
+                }
+                
+                return trailer ? trailer.key : null;
+            } catch (error) {
+                console.error('Erreur lors de la récupération de la bande-annonce:', error);
+                return null;
+            }
+        }
+
+        // Attacher les événements aux boutons play
+        function attachPlayButtonEvents() {
+            document.querySelectorAll('.play-button').forEach(btn => {
+                btn.addEventListener('click', async function(e) {
+                    e.stopPropagation();
+                    
+                    // Animation
+                    this.style.transform = 'translate(-50%, -50%) scale(0.9)';
+                    setTimeout(() => {
+                        this.style.transform = 'translate(-50%, -50%) scale(1.1)';
+                    }, 100);
+                    
+                    const movieId = this.getAttribute('data-id');
+                    const title = this.getAttribute('data-title');
+                    const overview = this.getAttribute('data-overview');
+                    const year = this.getAttribute('data-year');
+                    const rating = this.getAttribute('data-rating');
+                    const type = this.getAttribute('data-type');
+                    
+                    // Afficher le modal avec loading
+                    const modal = document.getElementById('videoModal');
+                    const videoInfo = document.getElementById('videoInfo');
+                    const videoPlayer = document.getElementById('videoPlayer');
+                    
+                    videoInfo.innerHTML = `
+                        <h3 class="video-title">${title} (${year})</h3>
+                        <div class="video-details">
+                            <span>Note: ${rating}/10</span> • <span>${type === 'tv' ? 'Série TV' : 'Film'}</span>
+                        </div>
+                        <div class="video-overview">${overview}</div>
+                    `;
+                    
+                    videoPlayer.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Chargement de la bande-annonce...</p></div>';
+                    modal.style.display = 'flex';
+                    
+                    // Chercher la bande-annonce
+                    const trailerKey = await getTrailer(movieId, type);
+                    
+                    if (trailerKey) {
+                        videoPlayer.innerHTML = '';
+                        videoPlayer.src = `https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0`;
+                    } else {
+                        videoPlayer.innerHTML = `
+                            <div class="error-message">
+                                <h3>Bande-annonce non disponible</h3>
+                                <p>Désolé, aucune bande-annonce n'est disponible pour ce contenu.</p>
+                            </div>
+                        `;
+                    }
+                });
+            });
+        }
+
+        // Fermer le modal vidéo
+        document.getElementById('closeModal').addEventListener('click', function() {
+            const modal = document.getElementById('videoModal');
+            const videoPlayer = document.getElementById('videoPlayer');
+            
+            modal.style.display = 'none';
+            videoPlayer.src = ''; // Arrêter la vidéo
+        });
+
+        // Fermer le modal en cliquant à l'extérieur
+        document.getElementById('videoModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                document.getElementById('videoPlayer').src = '';
+            }
+        });
         
         // Navigation par onglets
         document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -1270,26 +1285,26 @@
         document.getElementById('prevPage').addEventListener('click', () => {
             if (currentPage > 1) {
                 currentPage--;
-                loadMovies();
+                loadMoviesFromAPI();
             }
         });
         
         document.getElementById('nextPage').addEventListener('click', () => {
             currentPage++;
-            loadMovies();
+            loadMoviesFromAPI();
         });
         
         // Événements de pagination pour les séries
         document.getElementById('prevSeriesPage').addEventListener('click', () => {
             if (currentSeriesPage > 1) {
                 currentSeriesPage--;
-                loadSeries();
+                loadSeriesFromAPI();
             }
         });
         
         document.getElementById('nextSeriesPage').addEventListener('click', () => {
             currentSeriesPage++;
-            loadSeries();
+            loadSeriesFromAPI();
         });
         
         // Filtrage par catégorie
@@ -1300,7 +1315,14 @@
                 
                 currentGenre = this.getAttribute('data-genre');
                 currentPage = 1;
-                loadMovies();
+                isSearchMode = false;
+                searchQuery = '';
+                document.getElementById('searchInput').value = '';
+                
+                loadMoviesFromAPI();
+                
+                // Réafficher les séries si elles étaient cachées
+                document.getElementById('series').style.display = 'block';
                 
                 // Animation
                 this.style.transform = 'scale(0.95)';
@@ -1313,13 +1335,31 @@
         // Recherche
         document.getElementById('searchInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                const query = this.value.trim().toLowerCase();
+                const query = this.value.trim();
                 if (query) {
-                    searchContent(query);
-                } else {
+                    searchQuery = query;
+                    isSearchMode = true;
                     currentPage = 1;
-                    loadMovies();
-                    loadSeries();
+                    currentSeriesPage = 1;
+                    
+                    // Réinitialiser les filtres de genre
+                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelector('.category-btn[data-genre="all"]').classList.add('active');
+                    currentGenre = 'all';
+                    
+                    loadMoviesFromAPI();
+                    loadSeriesFromAPI();
+                    
+                    // Afficher les deux sections
+                    document.getElementById('films').style.display = 'block';
+                    document.getElementById('series').style.display = 'block';
+                } else {
+                    isSearchMode = false;
+                    searchQuery = '';
+                    currentPage = 1;
+                    currentSeriesPage = 1;
+                    loadMoviesFromAPI();
+                    loadSeriesFromAPI();
                 }
                 
                 // Animation
@@ -1330,41 +1370,6 @@
                 }, 100);
             }
         });
-        
-        // Fonction de recherche
-        function searchContent(query) {
-            const allMovies = Object.values(moviesDatabase).flat();
-            const allContent = [...allMovies, ...seriesDatabase];
-            
-            const results = allContent.filter(item => 
-                item.title.toLowerCase().includes(query) ||
-                item.genre.toLowerCase().includes(query)
-            );
-            
-            displayMovies(results, 'moviesGrid');
-            document.getElementById('pageInfo').textContent = `${results.length} résultat(s) trouvé(s)`;
-            
-            // Masquer la section séries si on est en mode recherche
-            document.getElementById('series').style.display = 'none';
-        }
-        
-        // Attacher les événements aux boutons play
-        function attachPlayButtonEvents() {
-            document.querySelectorAll('.play-button').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    
-                    // Animation
-                    this.style.transform = 'translate(-50%, -50%) scale(0.9)';
-                    setTimeout(() => {
-                        this.style.transform = 'translate(-50%, -50%) scale(1.1)';
-                    }, 100);
-                    
-                    const mediaId = this.getAttribute('data-id');
-                    alert(`Lecture de ${mediaId}\nEn production, cela démarrerait la lecture du contenu`);
-                });
-            });
-        }
         
         // Header scroll effect
         window.addEventListener('scroll', function() {
@@ -1398,6 +1403,19 @@
             const hero = document.querySelector('.hero');
             const rate = scrolled * -0.5;
             hero.style.transform = `translateY(${rate}px)`;
+        });
+
+        // Gestion des erreurs de réseau
+        window.addEventListener('online', function() {
+            console.log('Connexion rétablie');
+            if (document.querySelector('.error-message')) {
+                loadMoviesFromAPI();
+                loadSeriesFromAPI();
+            }
+        });
+
+        window.addEventListener('offline', function() {
+            console.log('Connexion perdue');
         });
     </script>
 </body>
