@@ -593,7 +593,7 @@
         /* TV Channels Styles */
         .channels-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 2rem;
             margin-bottom: 4rem;
         }
@@ -608,25 +608,61 @@
             cursor: pointer;
         }
         .channel-card:hover {
-            transform: translateY(-15px) scale(1.03);
+            transform: translateY(-10px) scale(1.02);
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
             border-color: rgba(255, 255, 255, 0.3);
         }
-        .channel-logo {
-            height: 200px;
-            width: 100%;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            position: relative;
+        .channel-header {
+            height: 150px;
+            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
-            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
         }
-        .channel-card:hover .channel-logo {
-            transform: scale(1.05);
+        .channel-logo {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            z-index: 2;
+        }
+        .channel-logo img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+        .live-indicator {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 68, 68, 0.9);
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            z-index: 3;
+        }
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
         .channel-info {
             padding: 1.5rem;
@@ -649,37 +685,30 @@
             margin-bottom: 1rem;
             line-height: 1.5;
         }
-        .channel-status {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+        .current-program {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 3px solid #ff4444;
+        }
+        .program-time {
+            font-size: 0.8rem;
+            color: #ff4444;
+            font-weight: bold;
+            margin-bottom: 0.3rem;
+        }
+        .program-title {
+            font-size: 0.9rem;
             color: #ffffff;
-            font-size: 0.85rem;
-        }
-        .status-live {
-            width: 8px;
-            height: 8px;
-            background: #ff4444;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7);
-            }
-            70% {
-                box-shadow: 0 0 0 10px rgba(255, 68, 68, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(255, 68, 68, 0);
-            }
+            font-weight: 500;
         }
         .watch-live-btn {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             border: none;
             border-radius: 25px;
             padding: 0.8rem 1.5rem;
@@ -693,15 +722,16 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            z-index: 4;
         }
         .channel-card:hover .watch-live-btn {
             opacity: 1;
-            transform: translate(-50%, -50%) scale(1.1);
+            transform: translate(-50%, -50%) scale(1.05);
             box-shadow: 0 12px 35px rgba(255, 255, 255, 0.4);
         }
         .watch-live-btn:hover {
             background: #ffffff;
-            transform: translate(-50%, -50%) scale(1.2);
+            transform: translate(-50%, -50%) scale(1.1);
         }
         /* Categories */
         .categories {
@@ -944,7 +974,7 @@
         </nav>
     </header>
     <!-- Hero Section -->
-    <section class="hero" id="accueil">
+    <section class="hero" id="hero-section">
         <div class="hero-content">
             <h1>Lachapry</h1>
             <p>Découvrez des milliers de films, séries et chaînes TV en streaming avec bandes-annonces officielles</p>
@@ -954,7 +984,7 @@
     <!-- Content -->
     <main class="content">
         <!-- Categories -->
-        <div class="categories">
+        <div class="categories" id="categories-section">
             <button class="category-btn active" data-genre="all">Tout</button>
             <button class="category-btn" data-genre="action">Action</button>
             <button class="category-btn" data-genre="comedy">Comédie</button>
@@ -1041,7 +1071,7 @@
             }
         }
         
-        // TV Channels data
+        // TV Channels data avec programmes simulés
         const frenchTVChannels = [
             {
                 id: 'tf1',
@@ -1049,7 +1079,8 @@
                 logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/2018_TF1_logo.svg/1200px-2018_TF1_logo.svg.png',
                 description: 'Première chaîne de télévision généraliste française. Actualités, divertissement, fiction.',
                 category: 'Généraliste',
-                url: 'https://www.tf1.fr/tf1/direct'
+                url: 'https://www.tf1.fr/tf1/direct',
+                currentProgram: { time: '20:00 - 21:00', title: 'Journal de 20H' }
             },
             {
                 id: 'france2',
@@ -1057,7 +1088,8 @@
                 logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/France_2_logo_2018.svg/1200px-France_2_logo_2018.svg.png',
                 description: 'Chaîne publique généraliste. JT, magazines, divertissement et cinéma français.',
                 category: 'Généraliste',
-                url: 'https://www.france.tv/france-2/direct.html'
+                url: 'https://www.france.tv/france-2/direct.html',
+                currentProgram: { time: '20:30 - 22:30', title: 'Envoyé Spécial' }
             },
             {
                 id: 'france3',
@@ -1065,7 +1097,8 @@
                 logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/France_3_logo_2018.svg/1200px-France_3_logo_2018.svg.png',
                 description: 'Télévision régionale publique. Information locale et programmes régionaux.',
                 category: 'Régionale',
-                url: 'https://www.france.tv/france-3/direct.html'
+                url: 'https://www.france.tv/france-3/direct.html',
+                currentProgram: { time: '19:30 - 20:00', title: 'France 3 Régions' }
             },
             {
                 id: 'canal+',
@@ -1073,7 +1106,8 @@
                 logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Canal%2B.svg/1200px-Canal%2B.svg.png',
                 description: 'Chaîne premium. Cinéma, sport, séries exclusives et divertissement.',
                 category: 'Premium',
-                url: 'https://www.canalplus.com/'
+                url: 'https://www.canalplus.com/',
+                currentProgram: { time: '21:00 - 23:00', title: 'Premier League Live' }
             },
             {
                 id: 'france5',
@@ -1081,7 +1115,8 @@
                 logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/France_5_logo_2018.svg/1200px-France_5_logo_2018.svg.png',
                 description: 'Chaîne éducative et culturelle. Documentaires, magazines de société.',
                 category: 'Culturelle',
-                url: 'https://www.france.tv/france-5/direct.html'
+                url: 'https://www.france.tv/france-5/direct.html',
+                currentProgram: { time: '20:50 - 22:30', title: 'Documentaire Nature' }
             },
             {
                 id: 'm6',
@@ -1089,7 +1124,8 @@
                 logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/M6_logo_2009.svg/1200px-M6_logo_2009.svg.png',
                 description: 'Chaîne généraliste privée. Divertissement, téléréalité, magazines.',
                 category: 'Généraliste',
-                url: 'https://www.6play.fr/m6/direct'
+                url: 'https://www.6play.fr/m6/direct',
+                currentProgram: { time: '21:05 - 23:15', title: 'Capital' }
             },
             {
                 id: 'arte',
@@ -1097,7 +1133,8 @@
                 logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Arte_Logo_2017.svg/1200px-Arte_Logo_2017.svg.png',
                 description: 'Chaîne culturelle franco-allemande. Culture, documentaires, cinéma d\'auteur.',
                 category: 'Culturelle',
-                url: 'https://www.arte.tv/fr/direct/'
+                url: 'https://www.arte.tv/fr/direct/',
+                currentProgram: { time: '20:55 - 22:25', title: 'Documentaire Histoire' }
             },
             {
                 id: 'c8',
@@ -1105,7 +1142,8 @@
                 logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/C8_logo_2016.svg/1200px-C8_logo_2016.svg.png',
                 description: 'Chaîne de divertissement. Talk-shows, débats, films et séries.',
                 category: 'Divertissement',
-                url: 'https://www.canalplus.com/chaines/c8'
+                url: 'https://www.canalplus.com/chaines/c8',
+                currentProgram: { time: '21:15 - 23:30', title: 'Touche pas à mon poste' }
             },
             {
                 id: 'w9',
@@ -1113,7 +1151,8 @@
                 logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/W9_logo_2016.svg/1200px-W9_logo_2016.svg.png',
                 description: 'Chaîne de divertissement du groupe M6. Téléréalité et magazines.',
                 category: 'Divertissement',
-                url: 'https://www.6play.fr/w9/direct'
+                url: 'https://www.6play.fr/w9/direct',
+                currentProgram: { time: '20:55 - 22:40', title: 'Les Marseillais' }
             },
             {
                 id: 'tmc',
@@ -1121,7 +1160,8 @@
                 logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/TMC_logo_2016.svg/1200px-TMC_logo_2016.svg.png',
                 description: 'Télé Monte Carlo. Divertissement, films et programmes de téléréalité.',
                 category: 'Divertissement',
-                url: 'https://www.tf1.fr/tmc/direct'
+                url: 'https://www.tf1.fr/tmc/direct',
+                currentProgram: { time: '21:00 - 23:00', title: 'Quotidien' }
             },
             {
                 id: 'tf1-series-films',
@@ -1129,7 +1169,8 @@
                 logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/TF1_S%C3%A9ries_Films_logo_2018.svg/1200px-TF1_S%C3%A9ries_Films_logo_2018.svg.png',
                 description: 'Chaîne dédiée aux séries et films. Rediffusions et programmes exclusifs.',
                 category: 'Fiction',
-                url: 'https://www.tf1.fr/tf1-series-films/direct'
+                url: 'https://www.tf1.fr/tf1-series-films/direct',
+                currentProgram: { time: '20:45 - 22:30', title: 'NCIS: Enquêtes spéciales' }
             },
             {
                 id: 'l-equipe',
@@ -1137,39 +1178,8 @@
                 logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/La_Cha%C3%AEne_L%27%C3%89quipe_logo_2016.svg/1200px-La_Cha%C3%AEne_L%27%C3%89quipe_logo_2016.svg.png',
                 description: 'Chaîne 100% sport. Actualités sportives, matchs en direct, magazines.',
                 category: 'Sport',
-                url: 'https://www.lequipe.fr/tv/'
-            },
-            {
-                id: '6ter',
-                name: '6ter',
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/6ter_logo_2016.svg/1200px-6ter_logo_2016.svg.png',
-                description: 'Chaîne du groupe M6. Rediffusions de séries et programmes familiaux.',
-                category: 'Famille',
-                url: 'https://www.6play.fr/6ter/direct'
-            },
-            {
-                id: 'rmc-story',
-                name: 'RMC Story',
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/RMC_Story_logo_2017.svg/1200px-RMC_Story_logo_2017.svg.png',
-                description: 'Documentaires, faits divers, histoire et témoignages.',
-                category: 'Documentaire',
-                url: 'https://www.tf1.fr/rmc-story/direct'
-            },
-            {
-                id: 'rmc-decouverte',
-                name: 'RMC Découverte',
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/RMC_D%C3%A9couverte_logo_2017.svg/1200px-RMC_D%C3%A9couverte_logo_2017.svg.png',
-                description: 'Documentaires sciences, nature, aventure et découverte.',
-                category: 'Documentaire',
-                url: 'https://www.tf1.fr/rmc-decouverte/direct'
-            },
-            {
-                id: 'cherie25',
-                name: 'Chérie 25',
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Ch%C3%A9rie_25_logo_2016.svg/1200px-Ch%C3%A9rie_25_logo_2016.svg.png',
-                description: 'Chaîne féminine. Films romantiques, séries et magazines lifestyle.',
-                category: 'Féminine',
-                url: 'https://www.tf1.fr/cherie-25/direct'
+                url: 'https://www.lequipe.fr/tv/',
+                currentProgram: { time: '21:00 - 22:00', title: 'L\'Équipe du Soir' }
             }
         ];
         
@@ -1226,18 +1236,24 @@
                 channelCard.style.animationDelay = `${index * 0.1}s`;
                 
                 channelCard.innerHTML = `
-                    <div class="channel-logo" style="background-image: url('${channel.logo}')">
+                    <div class="channel-header">
+                        <div class="live-indicator">
+                            <div class="status-dot"></div>
+                            EN DIRECT
+                        </div>
+                        <div class="channel-logo">
+                            <img src="${channel.logo}" alt="${channel.name}">
+                        </div>
                         <button class="watch-live-btn" onclick="openChannel('${channel.url}', '${channel.name}')">
-                            <div class="status-live"></div>
-                            Regarder en direct
+                            📺 Regarder en direct
                         </button>
                     </div>
                     <div class="channel-info">
                         <h3 class="channel-name">${channel.name}</h3>
                         <p class="channel-description">${channel.description}</p>
-                        <div class="channel-status">
-                            <div class="status-live"></div>
-                            <span>EN DIRECT • ${channel.category}</span>
+                        <div class="current-program">
+                            <div class="program-time">${channel.currentProgram.time}</div>
+                            <div class="program-title">${channel.currentProgram.title}</div>
                         </div>
                     </div>
                 `;
@@ -1293,7 +1309,9 @@
             setTimeout(() => {
                 notification.style.animation = 'slideInRight 0.3s ease-out reverse';
                 setTimeout(() => {
-                    document.body.removeChild(notification);
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
                 }, 300);
             }, 3000);
             
@@ -1682,7 +1700,7 @@
             }
         });
         
-        // Navigation par onglets
+        // Navigation par onglets - VERSION CORRIGÉE
         document.querySelectorAll('.nav-tab').forEach(tab => {
             tab.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -1691,19 +1709,44 @@
                 this.classList.add('active');
                 const tabName = this.getAttribute('data-tab');
                 currentTab = tabName;
-                // Affichage/masquage des sections
-                const sections = ['accueil', 'films', 'series', 'tv'];
-                sections.forEach(section => {
-                    const element = document.getElementById(section);
-                    if (section === tabName) {
-                        element.style.display = 'block';
-                        if (section !== 'accueil') {
-                            element.scrollIntoView({ behavior: 'smooth' });
+                
+                // Gestion spéciale pour l'accueil
+                if (tabName === 'accueil') {
+                    // Montrer la section hero
+                    document.getElementById('hero-section').style.display = 'flex';
+                    // Montrer les catégories
+                    document.getElementById('categories-section').style.display = 'flex';
+                    // Montrer les sections films et séries
+                    document.getElementById('films').style.display = 'block';
+                    document.getElementById('series').style.display = 'block';
+                    // Cacher la TV
+                    document.getElementById('tv').style.display = 'none';
+                    // Scroll vers le top
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    // Cacher la section hero pour les autres onglets
+                    document.getElementById('hero-section').style.display = 'none';
+                    // Cacher les catégories pour TV Direct
+                    if (tabName === 'tv') {
+                        document.getElementById('categories-section').style.display = 'none';
+                        document.getElementById('films').style.display = 'none';
+                        document.getElementById('series').style.display = 'none';
+                        document.getElementById('tv').style.display = 'block';
+                    } else {
+                        document.getElementById('categories-section').style.display = 'flex';
+                        document.getElementById('tv').style.display = 'none';
+                        if (tabName === 'films') {
+                            document.getElementById('films').style.display = 'block';
+                            document.getElementById('series').style.display = 'none';
+                        } else if (tabName === 'series') {
+                            document.getElementById('films').style.display = 'none';
+                            document.getElementById('series').style.display = 'block';
                         }
-                    } else if (section !== 'accueil') {
-                        element.style.display = tabName === 'accueil' ? 'block' : 'none';
                     }
-                });
+                    // Scroll vers la section content
+                    document.querySelector('.content').scrollIntoView({ behavior: 'smooth' });
+                }
+                
                 // Animation sur l'onglet
                 this.style.transform = 'scale(0.95)';
                 setTimeout(() => {
@@ -1748,7 +1791,9 @@
                 document.getElementById('searchInput').value = '';
                 loadMoviesFromAPI();
                 // Réafficher les séries si elles étaient cachées
-                document.getElementById('series').style.display = 'block';
+                if (currentTab === 'accueil') {
+                    document.getElementById('series').style.display = 'block';
+                }
                 // Animation
                 this.style.transform = 'scale(0.95)';
                 setTimeout(() => {
@@ -1775,6 +1820,10 @@
                     // Afficher les deux sections
                     document.getElementById('films').style.display = 'block';
                     document.getElementById('series').style.display = 'block';
+                    // Passer en mode recherche (pas accueil)
+                    document.getElementById('hero-section').style.display = 'none';
+                    document.getElementById('categories-section').style.display = 'flex';
+                    document.getElementById('tv').style.display = 'none';
                 } else {
                     isSearchMode = false;
                     searchQuery = '';
@@ -1822,8 +1871,10 @@
         window.addEventListener('scroll', function() {
             const scrolled = window.pageYOffset;
             const hero = document.querySelector('.hero');
-            const rate = scrolled * -0.5;
-            hero.style.transform = `translateY(${rate}px)`;
+            if (hero && hero.style.display !== 'none') {
+                const rate = scrolled * -0.5;
+                hero.style.transform = `translateY(${rate}px)`;
+            }
         });
         
         // Gestion des erreurs de réseau
@@ -1841,6 +1892,8 @@
         // Fonction utilitaire pour créer des particules
         function createParticle() {
             const hero = document.querySelector('.hero');
+            if (!hero || hero.style.display === 'none') return;
+            
             const particle = document.createElement('div');
             particle.style.cssText = `
                 position: absolute;
@@ -1919,7 +1972,7 @@
         console.log('🎬 Lachapry - Plateforme de streaming avec chaînes TV chargée avec succès!');
         console.log('💡 Utilisez Ctrl+K pour rechercher rapidement');
         console.log('🚀 Alt+← et Alt+→ pour naviguer entre les pages');
-        console.log('📺 Nouvelle section Direct TV disponible !');
+        console.log('📺 Nouvelle section Direct TV disponible avec programmes !');
     </script>
 </body>
 </html>
