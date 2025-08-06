@@ -1,729 +1,4 @@
-// Fonction pour générer les plateformes de streaming
-        function generateStreamingPlatforms(movieTitle, isTV = false) {
-            const platformsGrid = document.getElementById('platformsGrid');
-            platformsGrid.innerHTML = '';
-            // Mélanger les plateformes et en sélectionner quelques-unes
-            const shuffledPlatforms = [...streamingPlatforms].sort(() => Math.random() - 0.5);
-            const selectedPlatforms = shuffledPlatforms.slice(0, Math.floor(Math.random() * 4) + 3);
-            selectedPlatforms.forEach(platform => {
-                const platformCard = document.createElement('a');
-                platformCard.className = `platform-card ${platform.class}`;
-                platformCard.href = platform.url;
-                platformCard.target = '_blank';
-                platformCard.rel = 'noopener noreferrer';
-                platformCard.innerHTML = `
-                    <div class="platform-logo">
-                        <img src="${platform.logoUrl}" alt="${platform.name}">
-                    </div>
-                    <div class="platform-name">${platform.name}</div>
-                    <div class="platform-type">${platform.type}</div>
-                `;
-                // Animation au survol
-                platformCard.addEventListener('mouseenter', function() {
-                    this.style.transform = 'translateY(-8px) scale(1.05)';
-                });
-                platformCard.addEventListener('mouseleave', function() {
-                    this.style.transform = 'translateY(-5px) scale(1)';
-                });
-                platformsGrid.appendChild(platformCard);
-            });
-        }
-        // Fonction pour charger les films depuis l'API TMDB
-        async function loadMoviesFromAPI() {
-            try {
-                let endpoint;
-                let params = {
-                    page: currentPage,
-                    language: 'fr-FR'
-                };
-                if (isSearchMode && searchQuery) {
-                    endpoint = '/search/movie';
-                    params.query = searchQuery;
-                } else if (currentGenre === 'all') {
-                    endpoint = '/movie/popular';
-                } else {
-                    endpoint = '/discover/movie';
-                    params.with_genres = genreMap[currentGenre];
-                    params.sort_by = 'popularity.desc';
-                }
-                const url = apiConfig.buildUrl(endpoint, params);
-                const data = await APIHandler.makeRequest(url);
-                if (data.results) {
-                    displayMovies(data.results, 'moviesGrid', false);
-                    updatePaginationInfo(data.total_pages, 'pageInfo', false);
-                } else {
-                    throw new Error('Aucun résultat trouvé');
-                }
-            } catch (error) {
-                APIHandler.handleAPIError(error, 'moviesGrid', 'Erreur lors du chargement des films. Veuillez réessayer.');
-            }
-        }
-        // Fonction pour charger les séries depuis l'API TMDB
-        async function loadSeriesFromAPI() {
-            try {
-                let endpoint;
-                let params = {
-                    page: currentSeriesPage,
-                    language: 'fr-FR'
-                };
-                if (isSearchMode && searchQuery) {
-                    endpoint = '/search/tv';
-                    params.query = searchQuery;
-                } else {
-                    endpoint = '/tv/popular';
-                }
-                const url = apiConfig.buildUrl(endpoint, params);
-                const data = await APIHandler.makeRequest(url);
-                if (data.results) {
-                    displayMovies(data.results, 'seriesGrid', true);
-                    updatePaginationInfo(data.total_pages, 'seriesPageInfo', true);
-                } else {
-                    throw new Error('Aucun résultat trouvé');
-                }
-            } catch (error) {
-                APIHandler.handleAPIError(error, 'seriesGrid', 'Erreur lors du chargement des séries. Veuillez réessayer.');
-            }
-        }
-        // Fonction pour afficher une erreur
-        function showError(containerId, message) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = `<div class="error-message">${message}</div>`;
-        }
-        // Fonction pour afficher les films/séries
-        function displayMovies(movies, containerId, isTV = false) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            if (movies.length === 0) {
-                container.innerHTML = `<div class="error-message">Aucun résultat trouvé pour votre recherche.</div>`;
-                return;
-            }
-            movies.forEach((movie, index) => {
-                const title = isTV ? movie.name : movie.title;
-                const releaseDate = isTV ? movie.first_air_date : movie.release_date;
-                const year = releaseDate ? new Date(releaseDate).getFullYear() : 'N/A';
-                const posterPath = movie.poster_path
-                    ? `${apiConfig.imageBaseUrl}${movie.poster_path}`
-                    : 'https://via.placeholder.com/500x750/333/fff?text=Pas+d\'affiche';
-                const rating = movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A';
-                const stars = getStarRating(movie.vote_average);
-                const overview = movie.overview || 'Aucune description disponible.';
-                const movieCard = document.createElement('div');
-                movieCard.className = 'movie-card';
-                movieCard.style.animationDelay = `${index * 0.1}s`;
-                movieCard.innerHTML = `
-                    <div class="movie-poster" style="background-image: url('${posterPath}')">
-                        <button class="play-button"
-                                data-id="${movie.id}"
-                                data-title="${title}"
-                                data-overview="${overview}"
-                                data-year="${year}"
-                                data-rating="${rating}"
-                                data-type="${isTV ? 'tv' : 'movie'}">▶</button>
-                    </div>
-                    <div class="movie-info">
-                        <h3 class="movie-title">${title}</h3>
-                        <p class="movie-genre">${year} • ${isTV ? 'Série TV' : 'Film'}</p>
-                        <div class="movie-rating">
-                            <span class="stars">${stars}</span>
-                            <span>${rating}/10</span>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(movieCard);
-            });
-            // Réattacher les événements aux nouveaux boutons play
-            attachPlayButtonEvents();
-        }
-        // Fonction pour obtenir le rating en étoiles
-        function getStarRating(voteAverage) {
-            if (!voteAverage) return 'N/A';
-            const rating = Math.round(voteAverage / 2);
-            return '⭐'.repeat(rating) + '☆'.repeat(5 - rating);
-        }
-        // Fonction pour mettre à jour la pagination
-        function updatePaginationInfo(totalPages, elementId, isTV = false) {
-            const element = document.getElementById(elementId);
-            const current = isTV ? currentSeriesPage : currentPage;
-            element.textContent = `Page ${current} sur ${Math.min(totalPages, 500)}`; // TMDB limite à 500 pages
-        }
-        // Fonction pour obtenir la bande-annonce
-        async function getTrailer(movieId, type = 'movie') {
-            try {
-                const endpoint = `/${type}/${movieId}/videos`;
-                const params = { language: 'fr-FR' };
-                const url = apiConfig.buildUrl(endpoint, params);
-                const data = await APIHandler.makeRequest(url);
-                // Chercher d'abord en français, puis en anglais
-                let trailer = data.results.find(video =>
-                    video.type === 'Trailer' && video.site === 'YouTube'
-                );
-                if (!trailer && data.results.length > 0) {
-                    // Si pas de trailer français, essayer en anglais
-                    const enParams = { language: 'en-US' };
-                    const enUrl = apiConfig.buildUrl(endpoint, enParams);
-                    const enData = await APIHandler.makeRequest(enUrl);
-                    trailer = enData.results.find(video =>
-                        video.type === 'Trailer' && video.site === 'YouTube'
-                    );
-                }
-                return trailer ? trailer.key : null;
-            } catch (error) {
-                console.error('Erreur lors de la récupération de la bande-annonce:', error);
-                return null;
-            }
-        }
-        // Attacher les événements aux boutons play
-        function attachPlayButtonEvents() {
-            document.querySelectorAll('.play-button').forEach(btn => {
-                btn.addEventListener('click', async function(e) {
-                    e.stopPropagation();
-                    // Animation
-                    this.style.transform = 'translate(-50%, -50%) scale(0.9)';
-                    setTimeout(() => {
-                        this.style.transform = 'translate(-50%, -50%) scale(1.1)';
-                    }, 100);
-                    const movieId = this.getAttribute('data-id');
-                    const title = this.getAttribute('data-title');
-                    const overview = this.getAttribute('data-overview');
-                    const year = this.getAttribute('data-year');
-                    const rating = this.getAttribute('data-rating');
-                    const type = this.getAttribute('data-type');
-                    // Afficher le modal avec loading
-                    const modal = document.getElementById('videoModal');
-                    const videoInfo = document.getElementById('videoInfo');
-                    const videoPlayer = document.getElementById('videoPlayer');
-                    videoInfo.innerHTML = `
-                        <h3 class="video-title">${title} (${year})</h3>
-                        <div class="video-details">
-                            <span>⭐ Note: ${rating}/10</span>
-                            <span>🎬 ${type === 'tv' ? 'Série TV' : 'Film'}</span>
-                        </div>
-                        <div class="video-overview">${overview}</div>
-                    `;
-                    videoPlayer.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Chargement de la bande-annonce...</p></div>';
-                    modal.style.display = 'flex';
-                    // Générer les plateformes de streaming
-                    generateStreamingPlatforms(title, type === 'tv');
-                    // Chercher la bande-annonce
-                    const trailerKey = await getTrailer(movieId, type);
-                    if (trailerKey) {
-                        videoPlayer.innerHTML = '<div id="player"></div>';
-                        if (typeof YT !== 'undefined' && YT.Player) {
-                            new YT.Player('player', {
-                                height: '100%',
-                                width: '100%',
-                                videoId: trailerKey,
-                                playerVars: {
-                                    autoplay: 1,
-                                    controls: 0,
-                                    modestbranding: 1,
-                                    rel: 0,
-                                    showinfo: 0,
-                                    fs: 1
-                                },
-                                events: {
-                                    'onReady': function(event) {
-                                        event.target.playVideo();
-                                    }
-                                }
-                            });
-                        }
-                    } else {
-                        videoPlayer.innerHTML = `
-                            <div class="error-message">
-                                <h3>🎬 Bande-annonce non disponible</h3>
-                                <p>Désolé, aucune bande-annonce n'est disponible pour ce contenu, mais vous pouvez le regarder sur les plateformes ci-dessous !</p>
-                            </div>
-                        `;
-                    }
-                });
-            });
-        }
-        // Fermer le modal vidéo
-        document.getElementById('closeModal').addEventListener('click', function() {
-            const modal = document.getElementById('videoModal');
-            const videoPlayer = document.getElementById('videoPlayer');
-            modal.style.display = 'none';
-            videoPlayer.innerHTML = '';
-        });
-        // Fermer le modal en cliquant à l'extérieur
-        document.getElementById('videoModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.style.display = 'none';
-                document.getElementById('videoPlayer').innerHTML = '';
-            }
-        });
-        // Navigation par onglets
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-            tab.addEventListener('click', function(e) {
-                e.preventDefault();
-                // Mise à jour des onglets actifs
-                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-                const tabName = this.getAttribute('data-tab');
-                currentTab = tabName;
-                // Affichage/masquage des sections
-                const sections = ['accueil', 'films', 'series', 'tv-direct'];
-                sections.forEach(section => {
-                    const element = document.getElementById(section);
-                    if (section === tabName) {
-                        element.style.display = 'block';
-                        if (section !== 'accueil') {
-                            element.scrollIntoView({ behavior: 'smooth' });
-                        }
-                    } else if (section !== 'accueil') {
-                        element.style.display = tabName === 'accueil' ? 'block' : 'none';
-                    }
-                });
-                // Animation sur l'onglet
-                this.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    this.style.transform = 'translateY(-2px) scale(1)';
-                }, 100);
-            });
-        });
-        // Événements de pagination pour les films
-        document.getElementById('prevPage').addEventListener('click', () => {
-            if (currentPage > 1) {
-                currentPage--;
-                loadMoviesFromAPI();
-            }
-        });
-        document.getElementById('nextPage').addEventListener('click', () => {
-            currentPage++;
-            loadMoviesFromAPI();
-        });
-        // Événements de pagination pour les séries
-        document.getElementById('prevSeriesPage').addEventListener('click', () => {
-            if (currentSeriesPage > 1) {
-                currentSeriesPage--;
-                loadSeriesFromAPI();
-            }
-        });
-        document.getElementById('nextSeriesPage').addEventListener('click', () => {
-            currentSeriesPage++;
-            loadSeriesFromAPI();
-        });
-        // Filtrage par catégorie
-        document.querySelectorAll('.category-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                currentGenre = this.getAttribute('data-genre');
-                currentPage = 1;
-                isSearchMode = false;
-                searchQuery = '';
-                document.getElementById('searchInput').value = '';
-                loadMoviesFromAPI();
-                // Réafficher toutes les sections
-                document.getElementById('films').style.display = 'block';
-                document.getElementById('series').style.display = 'block';
-                document.getElementById('tv-direct').style.display = 'block';
-                // Animation
-                this.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    this.style.transform = 'translateY(-3px) scale(1)';
-                }, 100);
-            });
-        });
-        // Recherche
-        document.getElementById('searchInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                const query = this.value.trim();
-                if (query) {
-                    searchQuery = query;
-                    isSearchMode = true;
-                    currentPage = 1;
-                    currentSeriesPage = 1;
-                    // Réinitialiser les filtres de genre
-                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
-                    document.querySelector('.category-btn[data-genre="all"]').classList.add('active');
-                    currentGenre = 'all';
-                    loadMoviesFromAPI();
-                    loadSeriesFromAPI();
-                    // Afficher films et séries, cacher TV lors de la recherche
-                    document.getElementById('films').style.display = 'block';
-                    document.getElementById('series').style.display = 'block';
-                    document.getElementById('tv-direct').style.display = 'none';
-                } else {
-                    isSearchMode = false;
-                    searchQuery = '';
-                    currentPage = 1;
-                    currentSeriesPage = 1;
-                    loadMoviesFromAPI();
-                    loadSeriesFromAPI();
-                    // Réafficher toutes les sections
-                    document.getElementById('films').style.display = 'block';
-                    document.getElementById('series').style.display = 'block';
-                    document.getElementById('tv-direct').style.display = 'block';
-                }
-                // Animation
-                const searchBar = document.querySelector('.search-bar');
-                searchBar.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    searchBar.style.transform = 'translateY(-2px) scale(1)';
-                }, 100);
-            }
-        });
-        // Header scroll effect
-        window.addEventListener('scroll', function() {
-            const header = document.querySelector('.header');
-            if (window.scrollY > 100) {
-                header.style.background = 'rgba(0, 0, 0, 0.98)';
-                header.style.boxShadow = '0 5px 30px rgba(0, 0, 0, 0.8)';
-            } else {
-                header.style.background = 'rgba(0, 0, 0, 0.95)';
-                header.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.5)';
-            }
-        });
-        // Effet parallaxe
-        window.addEventListener('scroll', function() {
-            const scrolled = window.pageYOffset;
-            const hero = document.querySelector('.hero');
-            const rate = scrolled * -0.5;
-            hero.style.transform = `translateY(${rate}px)`;
-        });
-        // Gestion des erreurs de réseau
-        window.addEventListener('online', function() {
-            console.log('Connexion rétablie');
-            if (document.querySelector('.error-message')) {
-                loadMoviesFromAPI();
-                loadSeriesFromAPI();
-            }
-        });
-        window.addEventListener('offline', function() {
-            console.log('Connexion perdue');
-        });
-        // Protection contre l'inspection des clés API
-        const originalConsoleLog = console.log;
-        console.log = function(...args) {
-            const sensitiveKeywords = ['api_key', 'token', 'bearer', 'authorization'];
-            const hasApiKey = args.some(arg =>
-                typeof arg === 'string' &&
-                sensitiveKeywords.some(keyword =>
-                    arg.toLowerCase().includes(keyword)
-                )
-            );
-            if (!hasApiKey) {
-                originalConsoleLog.apply(console, args);
-            }
-        };
-        // Détection d'outils de développement (protection basique)
-        let devtools = {
-            open: false,
-            orientation: null
-        };
-        setInterval(() => {
-            if (window.outerHeight - window.innerHeight > 200 ||
-                window.outerWidth - window.innerWidth > 200) {
-                if (!devtools.open) {
-                    devtools.open = true;
-                    console.clear();
-                    console.log('%cAttention!', 'color: red; font-size: 30px; font-weight: bold;');
-                    console.log('%cCeci est une fonction de navigateur destinée aux développeurs. L\'utilisation de cette console peut compromettre la sécurité de votre compte.', 'color: red; font-size: 14px;');
-                }
-            } else {
-                devtools.open = false;
-            }
-        }, 500);
-        // Animations supplémentaires pour les plateformes
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.platform-card')) {
-                const card = e.target.closest('.platform-card');
-                card.style.transform = 'scale(0.95)';
-                setTimeout(() => {
-                    card.style.transform = 'translateY(-8px) scale(1.05)';
-                }, 100);
-            }
-        });
-        // Effet de particules sur le hero
-        function createParticle() {
-            const hero = document.querySelector('.hero');
-            const particle = document.createElement('div');
-            particle.style.cssText = `
-                position: absolute;
-                width: 2px;
-                height: 2px;
-                background: rgba(255, 255, 255, 0.1);
-                border-radius: 50%;
-                pointer-events: none;
-                left: ${Math.random() * 100}%;
-                top: ${Math.random() * 100}%;
-                animation: particleFloat ${3 + Math.random() * 4}s linear infinite;
-            `;
-            hero.appendChild(particle);
-            setTimeout(() => {
-                particle.remove();
-            }, 7000);
-        }
-        // Ajouter les animations CSS
-        const animationStyle = document.createElement('style');
-        animationStyle.textContent = `
-            @keyframes particleFloat {
-                0% {
-                    opacity: 0;
-                    transform: translateY(0) scale(0);
-                }
-                10% {
-                    opacity: 1;
-                    transform: translateY(-10px) scale(1);
-                }
-                90% {
-                    opacity: 1;
-                    transform: translateY(-100vh) scale(1);
-                }
-                100% {
-                    opacity: 0;
-                    transform: translateY(-100vh) scale(0);
-                }
-            }
-            @keyframes slideInRight {
-                from {
-                    opacity: 0;
-                    transform: translateX(100%);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateX(0);
-                }
-            }
-            @keyframes slideOutRight {
-                from {
-                    opacity: 1;
-                    transform: translateX(0);
-                }
-                to {
-                    opacity: 0;
-                    transform: translateX(100%);
-                }
-            }
-        `;
-        document.head.appendChild(animationStyle);
-        // Créer des particules périodiquement
-        setInterval(createParticle, 2000);
-        // Amélioration de l'accessibilité
-        document.addEventListener('keydown', function(e) {
-            // Fermer le modal avec Escape
-            if (e.key === 'Escape') {
-                const modal = document.getElementById('videoModal');
-                if (modal.style.display === 'flex') {
-                    modal.style.display = 'none';
-                    document.getElementById('videoPlayer').innerHTML = '';
-                }
-            }
-        });
-        // Gestion des erreurs d'images
-        document.addEventListener('error', function(e) {
-            if (e.target.tagName === 'IMG' || e.target.style.backgroundImage) {
-                console.log('Image failed to load, using placeholder');
-            }
-        }, true);
-        // Préchargement des images populaires
-        function preloadImages() {
-            const imageUrls = [
-                'https://via.placeholder.com/500x750/333/fff?text=Pas+d\'affiche'
-            ];
-            imageUrls.forEach(url => {
-                const img = new Image();
-                img.src = url;
-            });
-        }
-        // Lancer le préchargement après le chargement initial
-        setTimeout(preloadImages, 1000);
-        // Sauvegarde de l'état de navigation
-        let navigationState = {
-            currentPage: 1,
-            currentSeriesPage: 1,
-            currentGenre: 'all',
-            searchQuery: ''
-        };
-        // Mise à jour de l'état
-        function updateNavigationState() {
-            navigationState = {
-                currentPage,
-                currentSeriesPage,
-                currentGenre,
-                searchQuery
-            };
-        }
-        // Gestion de l'historique du navigateur
-        window.addEventListener('popstate', function(e) {
-            if (e.state) {
-                currentPage = e.state.currentPage || 1;
-                currentSeriesPage = e.state.currentSeriesPage || 1;
-                currentGenre = e.state.currentGenre || 'all';
-                searchQuery = e.state.searchQuery || '';
-                // Recharger le contenu
-                loadMoviesFromAPI();
-                loadSeriesFromAPI();
-            }
-        });
-        // Optimisation des performances avec debounce pour la recherche
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-        // Version optimisée de la recherche
-        const optimizedSearch = debounce(function(query) {
-            if (query.trim()) {
-                searchQuery = query.trim();
-                isSearchMode = true;
-                currentPage = 1;
-                currentSeriesPage = 1;
-                loadMoviesFromAPI();
-                loadSeriesFromAPI();
-            }
-        }, 300);
-        // Mise à jour de l'événement de recherche
-        document.getElementById('searchInput').addEventListener('input', function(e) {
-            const query = e.target.value;
-            if (query.length > 2) {
-                optimizedSearch(query);
-                // Cacher la section TV lors de la recherche
-                document.getElementById('tv-direct').style.display = 'none';
-            } else if (query.length === 0) {
-                isSearchMode = false;
-                searchQuery = '';
-                loadMoviesFromAPI();
-                loadSeriesFromAPI();
-                // Réafficher la section TV
-                document.getElementById('tv-direct').style.display = 'block';
-            }
-        });
-        // Indicateur de chargement global
-        function showGlobalLoading(show = true) {
-            let loader = document.getElementById('globalLoader');
-            if (!loader && show) {
-                loader = document.createElement('div');
-                loader.id = 'globalLoader';
-                loader.style.cssText = `
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 3px;
-                    background: linear-gradient(90deg, transparent, #ffffff, transparent);
-                    z-index: 9999;
-                    animation: loading 2s infinite;
-                `;
-                document.body.appendChild(loader);
-                const style = document.createElement('style');
-                style.textContent = `
-                    @keyframes loading {
-                        0% { transform: translateX(-100%); }
-                        100% { transform: translateX(100vw); }
-                    }
-                `;
-                document.head.appendChild(style);
-            } else if (loader && !show) {
-                loader.remove();
-            }
-        }
-        // Messages de statut pour l'accessibilité
-        function announceToScreenReader(message) {
-            const announcement = document.createElement('div');
-            announcement.setAttribute('aria-live', 'polite');
-            announcement.setAttribute('aria-atomic', 'true');
-            announcement.style.cssText = `
-                position: absolute;
-                left: -9999px;
-                width: 1px;
-                height: 1px;
-                overflow: hidden;
-            `;
-            announcement.textContent = message;
-            document.body.appendChild(announcement);
-            setTimeout(() => {
-                document.body.removeChild(announcement);
-            }, 1000);
-        }
-        // Amélioration de la fonction de chargement avec indicateurs
-        const originalLoadMovies = loadMoviesFromAPI;
-        loadMoviesFromAPI = async function() {
-            showGlobalLoading(true);
-            announceToScreenReader('Chargement des films en cours...');
-            try {
-                await originalLoadMovies();
-                announceToScreenReader('Films chargés avec succès');
-            } catch (error) {
-                announceToScreenReader('Erreur lors du chargement des films');
-            } finally {
-                showGlobalLoading(false);
-            }
-        };
-        // Mode sombre/clair (bonus)
-        let isDarkMode = true;
-        function toggleTheme() {
-            isDarkMode = !isDarkMode;
-            const root = document.documentElement;
-            if (isDarkMode) {
-                root.style.setProperty('--bg-primary', '#0a0a0a');
-                root.style.setProperty('--bg-secondary', '#1a1a1a');
-                root.style.setProperty('--text-primary', '#ffffff');
-                root.style.setProperty('--text-secondary', '#cccccc');
-            } else {
-                root.style.setProperty('--bg-primary', '#f5f5f5');
-                root.style.setProperty('--bg-secondary', '#ffffff');
-                root.style.setProperty('--text-primary', '#333333');
-                root.style.setProperty('--text-secondary', '#666666');
-            }
-        }
-        // Raccourcis clavier
-        document.addEventListener('keydown', function(e) {
-            // Ctrl/Cmd + K pour focus sur la recherche
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault();
-                document.getElementById('searchInput').focus();
-            }
-            // Flèches pour navigation
-            if (e.key === 'ArrowLeft' && e.altKey) {
-                e.preventDefault();
-                if (currentPage > 1) {
-                    document.getElementById('prevPage').click();
-                }
-            }
-            if (e.key === 'ArrowRight' && e.altKey) {
-                e.preventDefault();
-                document.getElementById('nextPage').click();
-            }
-        });
-        // Gestion des performances - lazy loading pour les images
-        if ('IntersectionObserver' in window) {
-            const imageObserver = new IntersectionObserver((entries, observer) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const moviePoster = entry.target;
-                        const bgImage = moviePoster.style.backgroundImage;
-                        if (bgImage && bgImage.includes('placeholder')) {
-                            // L'image est déjà chargée ou c'est un placeholder
-                            observer.unobserve(moviePoster);
-                        }
-                    }
-                });
-            });
-            // Observer sera appliqué aux nouvelles cartes lors de leur création
-            const originalDisplayMovies = displayMovies;
-            displayMovies = function(movies, containerId, isTV = false) {
-                originalDisplayMovies(movies, containerId, isTV);
-                // Observer les nouvelles images
-                const newPosters = document.querySelectorAll(`#${containerId} .movie-poster`);
-                newPosters.forEach(poster => imageObserver.observe(poster));
-            };
-        }
-        console.log('🎬 Lachapry - Plateforme de streaming chargée avec succès!');
-        console.log('💡 Utilisez Ctrl+K pour rechercher rapidement');
-        console.log('🚀 Alt+← et Alt+→ pour naviguer entre les pages');
-        console.log('📺 Nouveau: Section TV en Direct avec les chaînes françaises!');
-    </script>
-</body>
-</html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -893,94 +168,6 @@
         .paramount { background: linear-gradient(135deg, #0073e6, #005bb5); }
         .apple { background: linear-gradient(135deg, #007aff, #0051d5); }
         .crunchyroll { background: linear-gradient(135deg, #ff6600, #e55100); }
-        /* TV Channels Styles */
-        .tv-channels-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            margin-bottom: 4rem;
-        }
-        .channel-card {
-            background: #1a1a1a;
-            border-radius: 15px;
-            overflow: hidden;
-            transition: all 0.4s ease;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            position: relative;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-        }
-        .channel-card:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-        .channel-logo {
-            height: 200px;
-            width: 100%;
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            background-color: #2a2a2a;
-        }
-        .channel-card:hover .channel-logo {
-            transform: scale(1.05);
-        }
-        .channel-info {
-            padding: 1.5rem;
-            background: #161616;
-            transition: all 0.3s ease;
-        }
-        .channel-card:hover .channel-info {
-            background: #1f1f1f;
-        }
-        .channel-title {
-            font-size: 1.3rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            color: #ffffff;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-        }
-        .channel-description {
-            color: #cccccc;
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-            line-height: 1.4;
-        }
-        .channel-status {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #4CAF50;
-            font-size: 0.9rem;
-        }
-        .live-indicator {
-            width: 8px;
-            height: 8px;
-            background: #ff4444;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(255, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 68, 68, 0); }
-        }
-        /* Channel specific colors */
-        .tf1 { border-left: 4px solid #e20e16; }
-        .france2 { border-left: 4px solid #0066cc; }
-        .france3 { border-left: 4px solid #0066cc; }
-        .canal { border-left: 4px solid #000000; }
-        .france5 { border-left: 4px solid #7b68ee; }
-        .m6 { border-left: 4px solid #ff6600; }
-        .arte { border-left: 4px solid #ff8c00; }
-        .c8 { border-left: 4px solid #ff1744; }
-        .w9 { border-left: 4px solid #ffc107; }
-        .tmc { border-left: 4px solid #795548; }
         /* Loading Spinner */
         .loading-spinner {
             display: inline-block;
@@ -1394,7 +581,7 @@
             align-items: center;
             justify-content: center;
         }
-        .movie-card:hover .play-button, .channel-card:hover .play-button {
+        .movie-card:hover .play-button {
             opacity: 1;
             transform: translate(-50%, -50%) scale(1.1);
             box-shadow: 0 12px 35px rgba(255, 255, 255, 0.4);
@@ -1503,7 +690,7 @@
             .search-bar input {
                 width: 150px;
             }
-            .movies-grid, .tv-channels-grid {
+            .movies-grid {
                 grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             }
             .captcha-container {
@@ -1553,14 +740,14 @@
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
         }
         /* Loading animation for movie cards */
-        .movie-card, .channel-card {
+        .movie-card {
             animation: slideInUp 0.6s ease-out forwards;
             opacity: 0;
         }
-        .movie-card:nth-child(1), .channel-card:nth-child(1) { animation-delay: 0.1s; }
-        .movie-card:nth-child(2), .channel-card:nth-child(2) { animation-delay: 0.2s; }
-        .movie-card:nth-child(3), .channel-card:nth-child(3) { animation-delay: 0.3s; }
-        .movie-card:nth-child(4), .channel-card:nth-child(4) { animation-delay: 0.4s; }
+        .movie-card:nth-child(1) { animation-delay: 0.1s; }
+        .movie-card:nth-child(2) { animation-delay: 0.2s; }
+        .movie-card:nth-child(3) { animation-delay: 0.3s; }
+        .movie-card:nth-child(4) { animation-delay: 0.4s; }
         @keyframes slideInUp {
             from {
                 opacity: 0;
@@ -1634,7 +821,6 @@
                     <li><a href="#accueil" class="nav-tab active" data-tab="accueil">Accueil</a></li>
                     <li><a href="#films" class="nav-tab" data-tab="films">Films</a></li>
                     <li><a href="#series" class="nav-tab" data-tab="series">Séries</a></li>
-                    <li><a href="#tv-direct" class="nav-tab" data-tab="tv-direct">📺 TV Direct</a></li>
                 </ul>
             </div>
             <div class="search-bar">
@@ -1693,16 +879,6 @@
                 <button class="page-btn" id="nextSeriesPage">Suivant</button>
             </div>
         </section>
-        <!-- TV Direct Section -->
-        <section class="section" id="tv-direct">
-            <h2 class="section-title">📺 TV en Direct</h2>
-            <div class="tv-channels-grid" id="tvChannelsGrid">
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    <p>Chargement des chaînes TV...</p>
-                </div>
-            </div>
-        </section>
     </main>
     <!-- Footer -->
     <footer class="footer">
@@ -1752,7 +928,6 @@
             // Fallback gracieux
             document.body.innerHTML = '<div style="text-align: center; padding: 2rem; color: white;">Service temporairement indisponible</div>';
         }
-        
         // Variables pour la pagination et l'état
         let currentPage = 1;
         let currentSeriesPage = 1;
@@ -1760,101 +935,6 @@
         let currentTab = 'accueil';
         let isSearchMode = false;
         let searchQuery = '';
-
-        // Données des chaînes TV françaises
-        const tvChannels = [
-            {
-                id: 'tf1',
-                name: 'TF1',
-                description: 'La première chaîne de télévision française. Divertissement, informations et sport.',
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/d/da/TF1_logo_2013.png',
-                streamUrl: 'https://www.tf1.fr/tf1/direct',
-                category: 'Généraliste',
-                class: 'tf1'
-            },
-            {
-                id: 'france2',
-                name: 'France 2',
-                description: 'Chaîne publique française. Informations, culture et divertissement.',
-                logo: 'https://upload.wikimedia.org/wikipedia/fr/7/78/France_2_logo_2018.svg',
-                streamUrl: 'https://www.france.tv/france-2/direct',
-                category: 'Généraliste',
-                class: 'france2'
-            },
-            {
-                id: 'france3',
-                name: 'France 3',
-                description: 'Chaîne régionale française. Informations locales et programmes culturels.',
-                logo: 'https://upload.wikimedia.org/wikipedia/fr/2/20/France_3_logo_2018.svg',
-                streamUrl: 'https://www.france.tv/france-3/direct',
-                category: 'Généraliste',
-                class: 'france3'
-            },
-            {
-                id: 'canal',
-                name: 'Canal+',
-                description: 'Chaîne payante française. Cinéma, sport et programmes originaux.',
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/1/1a/Canal%2B_logo_2013.svg',
-                streamUrl: 'https://www.canalplus.com/live',
-                category: 'Cinéma/Sport',
-                class: 'canal'
-            },
-            {
-                id: 'france5',
-                name: 'France 5',
-                description: 'La chaîne du savoir et de la connaissance. Documentaires et éducation.',
-                logo: 'https://upload.wikimedia.org/wikipedia/fr/3/35/France_5_logo_2018.svg',
-                streamUrl: 'https://www.france.tv/france-5/direct',
-                category: 'Documentaire',
-                class: 'france5'
-            },
-            {
-                id: 'm6',
-                name: 'M6',
-                description: 'Chaîne privée française. Divertissement, télé-réalité et magazines.',
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/b/bc/M6_logo_2009.svg',
-                streamUrl: 'https://www.6play.fr/m6/direct',
-                category: 'Divertissement',
-                class: 'm6'
-            },
-            {
-                id: 'arte',
-                name: 'Arte',
-                description: 'Chaîne culturelle franco-allemande. Culture, documentaires et cinéma d\'auteur.',
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/0/0e/Arte_Logo_2017.svg',
-                streamUrl: 'https://www.arte.tv/fr/direct',
-                category: 'Culture',
-                class: 'arte'
-            },
-            {
-                id: 'c8',
-                name: 'C8',
-                description: 'Chaîne de divertissement français. Talk-shows et programmes humoristiques.',
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/8/81/C8_%28TV_channel%29_logo_2016.svg',
-                streamUrl: 'https://www.canalplus.com/chaines/c8',
-                category: 'Divertissement',
-                class: 'c8'
-            },
-            {
-                id: 'w9',
-                name: 'W9',
-                description: 'Chaîne de divertissement et d\'information. Programmes variés et téléfilms.',
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/4/4a/W9_-_2008_logo.svg',
-                streamUrl: 'https://www.6play.fr/w9/direct',
-                category: 'Divertissement',
-                class: 'w9'
-            },
-            {
-                id: 'tmc',
-                name: 'TMC',
-                description: 'Télé Monte Carlo. Films, séries et programmes de divertissement.',
-                logo: 'https://upload.wikimedia.org/wikipedia/commons/6/68/TMC_logo_2016.svg',
-                streamUrl: 'https://www.tf1.fr/tmc/direct',
-                category: 'Cinéma',
-                class: 'tmc'
-            }
-        ];
-
         // Mapping des genres
         const genreMap = {
             'action': 28,
@@ -1949,7 +1029,6 @@
                         // Charger les contenus depuis l'API
                         loadMoviesFromAPI();
                         loadSeriesFromAPI();
-                        loadTVChannels();
                     }, 500);
                 } else {
                     captchaError.style.display = 'block';
@@ -1974,7 +1053,6 @@
                 document.body.style.overflow = 'auto';
                 loadMoviesFromAPI();
                 loadSeriesFromAPI();
-                loadTVChannels();
             } else {
                 document.body.style.overflow = 'hidden';
             }
@@ -1985,94 +1063,710 @@
                 }
             });
         });
-
-        // Fonction pour charger les chaînes TV
-        function loadTVChannels() {
-            const container = document.getElementById('tvChannelsGrid');
-            container.innerHTML = '';
-
-            tvChannels.forEach((channel, index) => {
-                const channelCard = document.createElement('div');
-                channelCard.className = `channel-card ${channel.class}`;
-                channelCard.style.animationDelay = `${index * 0.1}s`;
-                
-                channelCard.innerHTML = `
-                    <div class="channel-logo" style="background-image: url('${channel.logo}')">
-                        <button class="play-button" data-url="${channel.streamUrl}" data-name="${channel.name}">
-                            📺
-                        </button>
+        // Fonction pour générer les plateformes de streaming
+        function generateStreamingPlatforms(movieTitle, isTV = false) {
+            const platformsGrid = document.getElementById('platformsGrid');
+            platformsGrid.innerHTML = '';
+            // Mélanger les plateformes et en sélectionner quelques-unes
+            const shuffledPlatforms = [...streamingPlatforms].sort(() => Math.random() - 0.5);
+            const selectedPlatforms = shuffledPlatforms.slice(0, Math.floor(Math.random() * 4) + 3);
+            selectedPlatforms.forEach(platform => {
+                const platformCard = document.createElement('a');
+                platformCard.className = `platform-card ${platform.class}`;
+                platformCard.href = platform.url;
+                platformCard.target = '_blank';
+                platformCard.rel = 'noopener noreferrer';
+                platformCard.innerHTML = `
+                    <div class="platform-logo">
+                        <img src="${platform.logoUrl}" alt="${platform.name}">
                     </div>
-                    <div class="channel-info">
-                        <h3 class="channel-title">${channel.name}</h3>
-                        <p class="channel-description">${channel.description}</p>
-                        <div class="channel-status">
-                            <div class="live-indicator"></div>
-                            <span>EN DIRECT • ${channel.category}</span>
+                    <div class="platform-name">${platform.name}</div>
+                    <div class="platform-type">${platform.type}</div>
+                `;
+                // Animation au survol
+                platformCard.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-8px) scale(1.05)';
+                });
+                platformCard.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(-5px) scale(1)';
+                });
+                platformsGrid.appendChild(platformCard);
+            });
+        }
+        // Fonction pour charger les films depuis l'API TMDB
+        async function loadMoviesFromAPI() {
+            try {
+                let endpoint;
+                let params = {
+                    page: currentPage,
+                    language: 'fr-FR'
+                };
+                if (isSearchMode && searchQuery) {
+                    endpoint = '/search/movie';
+                    params.query = searchQuery;
+                } else if (currentGenre === 'all') {
+                    endpoint = '/movie/popular';
+                } else {
+                    endpoint = '/discover/movie';
+                    params.with_genres = genreMap[currentGenre];
+                    params.sort_by = 'popularity.desc';
+                }
+                const url = apiConfig.buildUrl(endpoint, params);
+                const data = await APIHandler.makeRequest(url);
+                if (data.results) {
+                    displayMovies(data.results, 'moviesGrid', false);
+                    updatePaginationInfo(data.total_pages, 'pageInfo', false);
+                } else {
+                    throw new Error('Aucun résultat trouvé');
+                }
+            } catch (error) {
+                APIHandler.handleAPIError(error, 'moviesGrid', 'Erreur lors du chargement des films. Veuillez réessayer.');
+            }
+        }
+        // Fonction pour charger les séries depuis l'API TMDB
+        async function loadSeriesFromAPI() {
+            try {
+                let endpoint;
+                let params = {
+                    page: currentSeriesPage,
+                    language: 'fr-FR'
+                };
+                if (isSearchMode && searchQuery) {
+                    endpoint = '/search/tv';
+                    params.query = searchQuery;
+                } else {
+                    endpoint = '/tv/popular';
+                }
+                const url = apiConfig.buildUrl(endpoint, params);
+                const data = await APIHandler.makeRequest(url);
+                if (data.results) {
+                    displayMovies(data.results, 'seriesGrid', true);
+                    updatePaginationInfo(data.total_pages, 'seriesPageInfo', true);
+                } else {
+                    throw new Error('Aucun résultat trouvé');
+                }
+            } catch (error) {
+                APIHandler.handleAPIError(error, 'seriesGrid', 'Erreur lors du chargement des séries. Veuillez réessayer.');
+            }
+        }
+        // Fonction pour afficher une erreur
+        function showError(containerId, message) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `<div class="error-message">${message}</div>`;
+        }
+        // Fonction pour afficher les films/séries
+        function displayMovies(movies, containerId, isTV = false) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            if (movies.length === 0) {
+                container.innerHTML = `<div class="error-message">Aucun résultat trouvé pour votre recherche.</div>`;
+                return;
+            }
+            movies.forEach((movie, index) => {
+                const title = isTV ? movie.name : movie.title;
+                const releaseDate = isTV ? movie.first_air_date : movie.release_date;
+                const year = releaseDate ? new Date(releaseDate).getFullYear() : 'N/A';
+                const posterPath = movie.poster_path
+                    ? `${apiConfig.imageBaseUrl}${movie.poster_path}`
+                    : 'https://via.placeholder.com/500x750/333/fff?text=Pas+d\'affiche';
+                const rating = movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A';
+                const stars = getStarRating(movie.vote_average);
+                const overview = movie.overview || 'Aucune description disponible.';
+                const movieCard = document.createElement('div');
+                movieCard.className = 'movie-card';
+                movieCard.style.animationDelay = `${index * 0.1}s`;
+                movieCard.innerHTML = `
+                    <div class="movie-poster" style="background-image: url('${posterPath}')">
+                        <button class="play-button"
+                                data-id="${movie.id}"
+                                data-title="${title}"
+                                data-overview="${overview}"
+                                data-year="${year}"
+                                data-rating="${rating}"
+                                data-type="${isTV ? 'tv' : 'movie'}">▶</button>
+                    </div>
+                    <div class="movie-info">
+                        <h3 class="movie-title">${title}</h3>
+                        <p class="movie-genre">${year} • ${isTV ? 'Série TV' : 'Film'}</p>
+                        <div class="movie-rating">
+                            <span class="stars">${stars}</span>
+                            <span>${rating}/10</span>
                         </div>
                     </div>
                 `;
-                
-                container.appendChild(channelCard);
+                container.appendChild(movieCard);
             });
-
-            // Attacher les événements aux boutons de chaînes
-            attachTVChannelEvents();
+            // Réattacher les événements aux nouveaux boutons play
+            attachPlayButtonEvents();
         }
-
-        // Attacher les événements aux chaînes TV
-        function attachTVChannelEvents() {
-            document.querySelectorAll('.channel-card .play-button').forEach(btn => {
-                btn.addEventListener('click', function(e) {
+        // Fonction pour obtenir le rating en étoiles
+        function getStarRating(voteAverage) {
+            if (!voteAverage) return 'N/A';
+            const rating = Math.round(voteAverage / 2);
+            return '⭐'.repeat(rating) + '☆'.repeat(5 - rating);
+        }
+        // Fonction pour mettre à jour la pagination
+        function updatePaginationInfo(totalPages, elementId, isTV = false) {
+            const element = document.getElementById(elementId);
+            const current = isTV ? currentSeriesPage : currentPage;
+            element.textContent = `Page ${current} sur ${Math.min(totalPages, 500)}`; // TMDB limite à 500 pages
+        }
+        // Fonction pour obtenir la bande-annonce
+        async function getTrailer(movieId, type = 'movie') {
+            try {
+                const endpoint = `/${type}/${movieId}/videos`;
+                const params = { language: 'fr-FR' };
+                const url = apiConfig.buildUrl(endpoint, params);
+                const data = await APIHandler.makeRequest(url);
+                // Chercher d'abord en français, puis en anglais
+                let trailer = data.results.find(video =>
+                    video.type === 'Trailer' && video.site === 'YouTube'
+                );
+                if (!trailer && data.results.length > 0) {
+                    // Si pas de trailer français, essayer en anglais
+                    const enParams = { language: 'en-US' };
+                    const enUrl = apiConfig.buildUrl(endpoint, enParams);
+                    const enData = await APIHandler.makeRequest(enUrl);
+                    trailer = enData.results.find(video =>
+                        video.type === 'Trailer' && video.site === 'YouTube'
+                    );
+                }
+                return trailer ? trailer.key : null;
+            } catch (error) {
+                console.error('Erreur lors de la récupération de la bande-annonce:', error);
+                return null;
+            }
+        }
+        // Attacher les événements aux boutons play
+        function attachPlayButtonEvents() {
+            document.querySelectorAll('.play-button').forEach(btn => {
+                btn.addEventListener('click', async function(e) {
                     e.stopPropagation();
-                    
-                    const channelUrl = this.getAttribute('data-url');
-                    const channelName = this.getAttribute('data-name');
-                    
-                    // Animation du bouton
+                    // Animation
                     this.style.transform = 'translate(-50%, -50%) scale(0.9)';
                     setTimeout(() => {
                         this.style.transform = 'translate(-50%, -50%) scale(1.1)';
                     }, 100);
-
-                    // Ouvrir la chaîne dans un nouvel onglet
-                    window.open(channelUrl, '_blank', 'noopener,noreferrer');
-                    
-                    // Optionnel: afficher une notification
-                    showChannelNotification(channelName);
+                    const movieId = this.getAttribute('data-id');
+                    const title = this.getAttribute('data-title');
+                    const overview = this.getAttribute('data-overview');
+                    const year = this.getAttribute('data-year');
+                    const rating = this.getAttribute('data-rating');
+                    const type = this.getAttribute('data-type');
+                    // Afficher le modal avec loading
+                    const modal = document.getElementById('videoModal');
+                    const videoInfo = document.getElementById('videoInfo');
+                    const videoPlayer = document.getElementById('videoPlayer');
+                    videoInfo.innerHTML = `
+                        <h3 class="video-title">${title} (${year})</h3>
+                        <div class="video-details">
+                            <span>⭐ Note: ${rating}/10</span>
+                            <span>🎬 ${type === 'tv' ? 'Série TV' : 'Film'}</span>
+                        </div>
+                        <div class="video-overview">${overview}</div>
+                    `;
+                    videoPlayer.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Chargement de la bande-annonce...</p></div>';
+                    modal.style.display = 'flex';
+                    // Générer les plateformes de streaming
+                    generateStreamingPlatforms(title, type === 'tv');
+                    // Chercher la bande-annonce
+                    const trailerKey = await getTrailer(movieId, type);
+                    if (trailerKey) {
+                        videoPlayer.innerHTML = '<div id="player"></div>';
+                        if (typeof YT !== 'undefined' && YT.Player) {
+                            new YT.Player('player', {
+                                height: '100%',
+                                width: '100%',
+                                videoId: trailerKey,
+                                playerVars: {
+                                    autoplay: 1,
+                                    controls: 0,
+                                    modestbranding: 1,
+                                    rel: 0,
+                                    showinfo: 0,
+                                    fs: 1
+                                },
+                                events: {
+                                    'onReady': function(event) {
+                                        event.target.playVideo();
+                                    }
+                                }
+                            });
+                        }
+                    } else {
+                        videoPlayer.innerHTML = `
+                            <div class="error-message">
+                                <h3>🎬 Bande-annonce non disponible</h3>
+                                <p>Désolé, aucune bande-annonce n'est disponible pour ce contenu, mais vous pouvez le regarder sur les plateformes ci-dessous !</p>
+                            </div>
+                        `;
+                    }
                 });
             });
         }
-
-        // Fonction pour afficher une notification de chaîne
-        function showChannelNotification(channelName) {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 100px;
-                right: 20px;
-                background: rgba(0, 0, 0, 0.9);
-                color: white;
-                padding: 1rem 1.5rem;
-                border-radius: 10px;
-                z-index: 10000;
-                backdrop-filter: blur(10px);
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                animation: slideInRight 0.3s ease-out;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            `;
-            
-            notification.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    📺 <span>Ouverture de ${channelName}...</span>
-                </div>
-            `;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.animation = 'slideOutRight 0.3s ease-out forwards';
+        // Fermer le modal vidéo
+        document.getElementById('closeModal').addEventListener('click', function() {
+            const modal = document.getElementById('videoModal');
+            const videoPlayer = document.getElementById('videoPlayer');
+            modal.style.display = 'none';
+            videoPlayer.innerHTML = '';
+        });
+        // Fermer le modal en cliquant à l'extérieur
+        document.getElementById('videoModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+                document.getElementById('videoPlayer').innerHTML = '';
+            }
+        });
+        // Navigation par onglets
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                e.preventDefault();
+                // Mise à jour des onglets actifs
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                const tabName = this.getAttribute('data-tab');
+                currentTab = tabName;
+                // Affichage/masquage des sections
+                const sections = ['accueil', 'films', 'series'];
+                sections.forEach(section => {
+                    const element = document.getElementById(section);
+                    if (section === tabName) {
+                        element.style.display = 'block';
+                        if (section !== 'accueil') {
+                            element.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    } else if (section !== 'accueil') {
+                        element.style.display = tabName === 'accueil' ? 'block' : 'none';
+                    }
+                });
+                // Animation sur l'onglet
+                this.style.transform = 'scale(0.95)';
                 setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 3000);
+                    this.style.transform = 'translateY(-2px) scale(1)';
+                }, 100);
+            });
+        });
+        // Événements de pagination pour les films
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                loadMoviesFromAPI();
+            }
+        });
+        document.getElementById('nextPage').addEventListener('click', () => {
+            currentPage++;
+            loadMoviesFromAPI();
+        });
+        // Événements de pagination pour les séries
+        document.getElementById('prevSeriesPage').addEventListener('click', () => {
+            if (currentSeriesPage > 1) {
+                currentSeriesPage--;
+                loadSeriesFromAPI();
+            }
+        });
+        document.getElementById('nextSeriesPage').addEventListener('click', () => {
+            currentSeriesPage++;
+            loadSeriesFromAPI();
+        });
+        // Filtrage par catégorie
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentGenre = this.getAttribute('data-genre');
+                currentPage = 1;
+                isSearchMode = false;
+                searchQuery = '';
+                document.getElementById('searchInput').value = '';
+                loadMoviesFromAPI();
+                // Réafficher les séries si elles étaient cachées
+                document.getElementById('series').style.display = 'block';
+                // Animation
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = 'translateY(-3px) scale(1)';
+                }, 100);
+            });
+        });
+        // Recherche
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const query = this.value.trim();
+                if (query) {
+                    searchQuery = query;
+                    isSearchMode = true;
+                    currentPage = 1;
+                    currentSeriesPage = 1;
+                    // Réinitialiser les filtres de genre
+                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelector('.category-btn[data-genre="all"]').classList.add('active');
+                    currentGenre = 'all';
+                    loadMoviesFromAPI();
+                    loadSeriesFromAPI();
+                    // Afficher les deux sections
+                    document.getElementById('films').style.display = 'block';
+                    document.getElementById('series').style.display = 'block';
+                } else {
+                    isSearchMode = false;
+                    searchQuery = '';
+                    currentPage = 1;
+                    currentSeriesPage = 1;
+                    loadMoviesFromAPI();
+                    loadSeriesFromAPI();
+                }
+                // Animation
+                const searchBar = document.querySelector('.search-bar');
+                searchBar.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    searchBar.style.transform = 'translateY(-2px) scale(1)';
+                }, 100);
+            }
+        });
+        // Header scroll effect
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.header');
+            if (window.scrollY > 100) {
+                header.style.background = 'rgba(0, 0, 0, 0.98)';
+                header.style.boxShadow = '0 5px 30px rgba(0, 0, 0, 0.8)';
+            } else {
+                header.style.background = 'rgba(0, 0, 0, 0.95)';
+                header.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.5)';
+            }
+        });
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+        // Effet parallaxe
+        window.addEventListener('scroll', function() {
+            const scrolled = window.pageYOffset;
+            const hero = document.querySelector('.hero');
+            const rate = scrolled * -0.5;
+            hero.style.transform = `translateY(${rate}px)`;
+        });
+        // Gestion des erreurs de réseau
+        window.addEventListener('online', function() {
+            console.log('Connexion rétablie');
+            if (document.querySelector('.error-message')) {
+                loadMoviesFromAPI();
+                loadSeriesFromAPI();
+            }
+        });
+        window.addEventListener('offline', function() {
+            console.log('Connexion perdue');
+        });
+        // Protection contre l'inspection des clés API
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            const sensitiveKeywords = ['api_key', 'token', 'bearer', 'authorization'];
+            const hasApiKey = args.some(arg =>
+                typeof arg === 'string' &&
+                sensitiveKeywords.some(keyword =>
+                    arg.toLowerCase().includes(keyword)
+                )
+            );
+            if (!hasApiKey) {
+                originalConsoleLog.apply(console, args);
+            }
+        };
+        // Détection d'outils de développement (protection basique)
+        let devtools = {
+            open: false,
+            orientation: null
+        };
+        setInterval(() => {
+            if (window.outerHeight - window.innerHeight > 200 ||
+                window.outerWidth - window.innerWidth > 200) {
+                if (!devtools.open) {
+                    devtools.open = true;
+                    console.clear();
+                    console.log('%cAttention!', 'color: red; font-size: 30px; font-weight: bold;');
+                    console.log('%cCeci est une fonction de navigateur destinée aux développeurs. L\'utilisation de cette console peut compromettre la sécurité de votre compte.', 'color: red; font-size: 14px;');
+                }
+            } else {
+                devtools.open = false;
+            }
+        }, 500);
+        // Animations supplémentaires pour les plateformes
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.platform-card')) {
+                const card = e.target.closest('.platform-card');
+                card.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    card.style.transform = 'translateY(-8px) scale(1.05)';
+                }, 100);
+            }
+        });
+        // Effet de particules sur le hero (optionnel)
+        function createParticle() {
+            const hero = document.querySelector('.hero');
+            const particle = document.createElement('div');
+            particle.style.cssText = `
+                position: absolute;
+                width: 2px;
+                height: 2px;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 50%;
+                pointer-events: none;
+                left: ${Math.random() * 100}%;
+                top: ${Math.random() * 100}%;
+                animation: particleFloat ${3 + Math.random() * 4}s linear infinite;
+            `;
+            hero.appendChild(particle);
+            setTimeout(() => {
+                particle.remove();
+            }, 7000);
         }
+        // Ajouter l'animation des particules
+        const particleStyle = document.createElement('style');
+        particleStyle.textContent = `
+            @keyframes particleFloat {
+                0% {
+                    opacity: 0;
+                    transform: translateY(0) scale(0);
+                }
+                10% {
+                    opacity: 1;
+                    transform: translateY(-10px) scale(1);
+                }
+                90% {
+                    opacity: 1;
+                    transform: translateY(-100vh) scale(1);
+                }
+                100% {
+                    opacity: 0;
+                    transform: translateY(-100vh) scale(0);
+                }
+            }
+        `;
+        document.head.appendChild(particleStyle);
+        // Créer des particules périodiquement
+        setInterval(createParticle, 2000);
+        // Amélioration de l'accessibilité
+        document.addEventListener('keydown', function(e) {
+            // Fermer le modal avec Escape
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('videoModal');
+                if (modal.style.display === 'flex') {
+                    modal.style.display = 'none';
+                    document.getElementById('videoPlayer').innerHTML = '';
+                }
+            }
+        });
+        // Gestion des erreurs d'images
+        document.addEventListener('error', function(e) {
+            if (e.target.tagName === 'IMG' || e.target.style.backgroundImage) {
+                console.log('Image failed to load, using placeholder');
+            }
+        }, true);
+        // Préchargement des images populaires
+        function preloadImages() {
+            const imageUrls = [
+                'https://via.placeholder.com/500x750/333/fff?text=Pas+d\'affiche'
+            ];
+            imageUrls.forEach(url => {
+                const img = new Image();
+                img.src = url;
+            });
+        }
+        // Lancer le préchargement après le chargement initial
+        setTimeout(preloadImages, 1000);
+        // Sauvegarde de l'état de navigation
+        let navigationState = {
+            currentPage: 1,
+            currentSeriesPage: 1,
+            currentGenre: 'all',
+            searchQuery: ''
+        };
+        // Mise à jour de l'état
+        function updateNavigationState() {
+            navigationState = {
+                currentPage,
+                currentSeriesPage,
+                currentGenre,
+                searchQuery
+            };
+        }
+        // Gestion de l'historique du navigateur
+        window.addEventListener('popstate', function(e) {
+            if (e.state) {
+                currentPage = e.state.currentPage || 1;
+                currentSeriesPage = e.state.currentSeriesPage || 1;
+                currentGenre = e.state.currentGenre || 'all';
+                searchQuery = e.state.searchQuery || '';
+                // Recharger le contenu
+                loadMoviesFromAPI();
+                loadSeriesFromAPI();
+            }
+        });
+        // Optimisation des performances avec debounce pour la recherche
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        // Version optimisée de la recherche
+        const optimizedSearch = debounce(function(query) {
+            if (query.trim()) {
+                searchQuery = query.trim();
+                isSearchMode = true;
+                currentPage = 1;
+                currentSeriesPage = 1;
+                loadMoviesFromAPI();
+                loadSeriesFromAPI();
+            }
+        }, 300);
+        // Mise à jour de l'événement de recherche
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const query = e.target.value;
+            if (query.length > 2) {
+                optimizedSearch(query);
+            } else if (query.length === 0) {
+                isSearchMode = false;
+                searchQuery = '';
+                loadMoviesFromAPI();
+                loadSeriesFromAPI();
+            }
+        });
+        // Indicateur de chargement global
+        function showGlobalLoading(show = true) {
+            let loader = document.getElementById('globalLoader');
+            if (!loader && show) {
+                loader = document.createElement('div');
+                loader.id = 'globalLoader';
+                loader.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 3px;
+                    background: linear-gradient(90deg, transparent, #ffffff, transparent);
+                    z-index: 9999;
+                    animation: loading 2s infinite;
+                `;
+                document.body.appendChild(loader);
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes loading {
+                        0% { transform: translateX(-100%); }
+                        100% { transform: translateX(100vw); }
+                    }
+                `;
+                document.head.appendChild(style);
+            } else if (loader && !show) {
+                loader.remove();
+            }
+        }
+        // Messages de statut pour l'accessibilité
+        function announceToScreenReader(message) {
+            const announcement = document.createElement('div');
+            announcement.setAttribute('aria-live', 'polite');
+            announcement.setAttribute('aria-atomic', 'true');
+            announcement.style.cssText = `
+                position: absolute;
+                left: -9999px;
+                width: 1px;
+                height: 1px;
+                overflow: hidden;
+            `;
+            announcement.textContent = message;
+            document.body.appendChild(announcement);
+            setTimeout(() => {
+                document.body.removeChild(announcement);
+            }, 1000);
+        }
+        // Amélioration de la fonction de chargement avec indicateurs
+        const originalLoadMovies = loadMoviesFromAPI;
+        loadMoviesFromAPI = async function() {
+            showGlobalLoading(true);
+            announceToScreenReader('Chargement des films en cours...');
+            try {
+                await originalLoadMovies();
+                announceToScreenReader('Films chargés avec succès');
+            } catch (error) {
+                announceToScreenReader('Erreur lors du chargement des films');
+            } finally {
+                showGlobalLoading(false);
+            }
+        };
+        // Mode sombre/clair (bonus)
+        let isDarkMode = true;
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            const root = document.documentElement;
+            if (isDarkMode) {
+                root.style.setProperty('--bg-primary', '#0a0a0a');
+                root.style.setProperty('--bg-secondary', '#1a1a1a');
+                root.style.setProperty('--text-primary', '#ffffff');
+                root.style.setProperty('--text-secondary', '#cccccc');
+            } else {
+                root.style.setProperty('--bg-primary', '#f5f5f5');
+                root.style.setProperty('--bg-secondary', '#ffffff');
+                root.style.setProperty('--text-primary', '#333333');
+                root.style.setProperty('--text-secondary', '#666666');
+            }
+        }
+        // Raccourcis clavier
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + K pour focus sur la recherche
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+            }
+            // Flèches pour navigation
+            if (e.key === 'ArrowLeft' && e.altKey) {
+                e.preventDefault();
+                if (currentPage > 1) {
+                    document.getElementById('prevPage').click();
+                }
+            }
+            if (e.key === 'ArrowRight' && e.altKey) {
+                e.preventDefault();
+                document.getElementById('nextPage').click();
+            }
+        });
+        // Gestion des performances - lazy loading pour les images
+        if ('IntersectionObserver' in window) {
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const moviePoster = entry.target;
+                        const bgImage = moviePoster.style.backgroundImage;
+                        if (bgImage && bgImage.includes('placeholder')) {
+                            // L'image est déjà chargée ou c'est un placeholder
+                            observer.unobserve(moviePoster);
+                        }
+                    }
+                });
+            });
+            // Observer sera appliqué aux nouvelles cartes lors de leur création
+            const originalDisplayMovies = displayMovies;
+            displayMovies = function(movies, containerId, isTV = false) {
+                originalDisplayMovies(movies, containerId, isTV);
+                // Observer les nouvelles images
+                const newPosters = document.querySelectorAll(`#${containerId} .movie-poster`);
+                newPosters.forEach(poster => imageObserver.observe(poster));
+            };
+        }
+        console.log('🎬 Lachapry - Plateforme de streaming chargée avec succès!');
+        console.log('💡 Utilisez Ctrl+K pour rechercher rapidement');
+        console.log('🚀 Alt+← et Alt+→ pour naviguer entre les pages');
+    </script>
+</body>
+</html>
